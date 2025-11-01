@@ -1,35 +1,37 @@
-"""
-Base encoder interface
-"""
+"""Base encoder interface"""
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Union, List
 import numpy as np
 
 
 class BaseEncoder(ABC):
-    """
-    Abstract base class for all encoders.
+    """Base encoder abstract class
     
-    All encoder implementations must inherit from this class and implement
-    the __call__ method.
+    All encoder implementations must inherit from this class
+    and implement the required methods.
     """
     
     @abstractmethod
-    def __call__(self, texts: List[str]) -> np.ndarray:
-        """
-        Encode a list of texts into embeddings.
+    def encode(self, text: Union[str, List[str]]) -> np.ndarray:
+        """Encode text to embeddings
         
         Args:
-            texts: List of texts to encode
-        
+            text: Single text string or list of strings
+            
         Returns:
-            Numpy array of shape (len(texts), embedding_dim)
+            numpy array of embeddings
+            - For single text: shape (dimension,)
+            - For list of texts: shape (n_texts, dimension)
         """
         pass
     
     @property
     @abstractmethod
-    def dim(self) -> int:
-        """Return the embedding dimension"""
+    def dimension(self) -> int:
+        """Get embedding dimension
+        
+        Returns:
+            Integer dimension of embeddings
+        """
         pass

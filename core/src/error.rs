@@ -1,40 +1,154 @@
-use pyo3::{exceptions::PyException, PyErr};
+//! Error types with context and tracing
+
 use thiserror::Error;
 
+/// Result type alias for convenience
+pub type Result<T> = std::result::Result<T, Error>;
+
+/// Main error type with detailed context
 #[derive(Error, Debug)]
-pub enum StrataError {
-    #[error("Invalid embedding dimension: expected {expected}, got {actual}")]
-    DimensionMismatch { expected: usize, actual: usize },
+pub enum Error {
+    /// Route not found
+    #[error("Route not found: {route_id}")]
+    RouteNotFound {
+        /// Route ID that was not found
+        route_id: String,
+    },
     
-    #[error("Route not found: {0}")]
-    RouteNotFound(String),
+    /// Dimension mismatch between embedding and configuration
+    #[error("Dimension mismatch: expected {expected}, got {actual}")]
+    DimensionMismatch {
+        /// Expected dimension from configuration
+        expected: usize,
+        /// Actual dimension received
+        actual: usize,
+    },
     
-    #[error("Invalid threshold: {0} (must be between 0.0 and 1.0)")]
-    InvalidThreshold(f32),
+    /// Index not built before routing
+    #[error("Index not built. Call build_index() before routing")]
+    IndexNotBuilt,
     
-    #[error("Empty route: {0}")]
-    EmptyRoute(String),
+    /// Invalid input provided
+    #[error("Invalid input: {message}")]
+    InvalidInput {
+        /// Error message
+        message: String,
+    },
     
-    #[error("Invalid route name: {0}")]
-    InvalidRouteName(String),
+    /// IO error occurred
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
     
-    #[error("Duplicate route: {0}")]
-    DuplicateRoute(String),
+    /// Serialization error
+    #[error("Serialization error: {0}")]
+    Serialization(#[from] serde_json::Error),
     
-    #[error("Cache error: {0}")]
-    CacheError(String),
+    /// No routes available
+    #[error("No routes available in router")]
+    NoRoutes,
     
-    #[error("Invalid input: {0}")]
-    InvalidInput(String),
-    
-    #[error("Internal error: {0}")]
-    InternalError(String),
+    /// Unknown error
+    #[error("Unknown error: {message}")]
+    Unknown {
+        /// Error message
+        message: String,
+    },
 }
 
-impl From<StrataError> for PyErr {
-    fn from(err: StrataError) -> PyErr {
-        PyException::new_err(err.to_string())
+impl Error {
+    /// Check if error is recoverable
+    ///
+    /// Recoverable errors indicate user input problems that can be fixed.
+    /// Non-recoverable errors indicate system or programming errors.
+    #[must_use]
+    pub fn is_recoverable(&self) -> bool {
+        matches!(
+            self,
+            Self::InvalidInput { .. }
+                | Self::IndexNotBuilt
+                | Self::NoRoutes
+                | Self::RouteNotFound { .. }
+                | Self::DimensionMismatch { .. }
+        )
+    }
+    
+    /// Get error severity
+    #[must_use]
+    pub fn severity(&self) -> ErrorSeverity {
+        match self {
+            Self::Io(_) | Self::Unknown { .. } => ErrorSeverity::Critical,
+            Self::Serialization(_) => ErrorSeverity::High,
+            Self::IndexNotBuilt | Self::NoRoutes => ErrorSeverity::Medium,
+            Self::InvalidInput { .. }
+                | Self::RouteNotFound { .. }
+                | Self::DimensionMismatch { .. } => ErrorSeverity::Low,
+        }
+    }
+    
+    /// Create InvalidInput error
+    #[must_use]
+    pub fn invalid_input(message: impl Into<String>) -> Self {
+        Self::InvalidInput {
+            message: message.into(),
+        }
+    }
+    
+    /// Create DimensionMismatch error
+    #[must_use]
+    pub fn dimension_mismatch(expected: usize, actual: usize) -> Self {
+        Self::DimensionMismatch {
+            expected,
+            actual,
+        }
     }
 }
 
-pub type Result<T> = std::result::Result<T, StrataError>;
+/// Error severity levels
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ErrorSeverity {
+    /// Low severity - user input error
+    Low,
+    /// Medium severity - operation cannot proceed
+    Medium,
+    /// High severity - data corruption or inconsistency
+    High,
+    /// Critical severity - system error
+    Critical,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_error_recoverable() {
+        let err = Error::invalid_input("test");
+        assert!(err.is_recoverable());
+        
+        let err = Error::dimension_mismatch(384, 256);
+        assert!(err.is_recoverable());
+        
+        let err = Error::Unknown { message: "test".into() };
+        assert!(!err.is_recoverable());
+    }
+    
+    #[test]
+    fn test_error_severity() {
+        let err = Error::invalid_input("test");
+        assert_eq!(err.severity(), ErrorSeverity::Low);
+        
+        let err = Error::dimension_mismatch(384, 256);
+        assert_eq!(err.severity(), ErrorSeverity::Low);
+        
+        let err = Error::Unknown { message: "test".into() };
+        assert_eq!(err.severity(), ErrorSeverity::Critical);
+    }
+    
+    #[test]
+    fn test_error_display() {
+        let err = Error::dimension_mismatch(384, 256);
+        let display = err.to_string();
+        assert!(display.contains("384"));
+        assert!(display.contains("256"));
+    }
+}

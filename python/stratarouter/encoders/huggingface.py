@@ -1,105 +1,71 @@
-"""
-HuggingFace encoder implementation
-"""
+"""HuggingFace encoder implementation"""
 
-from typing import List, Optional
+from typing import Union, List
 import numpy as np
-
-try:
-    from sentence_transformers import SentenceTransformer
-except ImportError:
-    raise ImportError(
-        "sentence-transformers not installed. Install with: pip install stratarouter[huggingface]"
-    )
-
-from stratarouter.encoders.base import BaseEncoder
+from .base import BaseEncoder
 
 
 class HuggingFaceEncoder(BaseEncoder):
-    """
-    HuggingFace SentenceTransformer encoder.
+    """HuggingFace Sentence Transformers encoder
     
-    Uses local sentence-transformers models for fast, offline embedding generation.
+    Uses sentence-transformers library for encoding.
     
-    Args:
-        model: Model name or path (default: "all-MiniLM-L6-v2")
-        device: Device to run on ("cpu" or "cuda", default: auto-detect)
-    
-    Example:
-        >>> encoder = HuggingFaceEncoder()
-        >>> embeddings = encoder(["hello", "world"])
-        >>> print(embeddings.shape)  # (2, 384)
+    Examples:
+        >>> encoder = HuggingFaceEncoder("sentence-transformers/all-MiniLM-L6-v2")
+        >>> embedding = encoder.encode("Hello world")
+        >>> embedding.shape
+        (384,)
     """
     
-    def __init__(
-        self,
-        model: str = "all-MiniLM-L6-v2",
-        device: Optional[str] = None,
-    ):
-        self
-
-"""
-HuggingFace encoder implementation
-"""
-
-from typing import List, Optional
-import numpy as np
-
-try:
-    from sentence_transformers import SentenceTransformer
-except ImportError:
-    raise ImportError(
-        "sentence-transformers not installed. Install with: pip install stratarouter[huggingface]"
-    )
-
-from stratarouter.encoders.base import BaseEncoder
-
-
-class HuggingFaceEncoder(BaseEncoder):
-    """
-    HuggingFace SentenceTransformer encoder.
+    def __init__(self, model_name: str = "sentence-transformers/all-MiniLM-L6-v2", 
+                 device: str = "cpu", **kwargs):
+        """Initialize HuggingFace encoder
+        
+        Args:
+            model_name: Name of the sentence-transformers model
+            device: Device to run on ("cpu" or "cuda")
+            **kwargs: Additional arguments for SentenceTransformer
+        """
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError as e:
+            raise ImportError(
+                "sentence-transformers not installed. "
+                "Install: pip install stratarouter[huggingface]"
+            ) from e
+        
+        self.model_name = model_name
+        self.model = SentenceTransformer(model_name, device=device, **kwargs)
+        self._dimension = self.model.get_sentence_embedding_dimension()
     
-    Uses local sentence-transformers models for fast, offline embedding generation.
-    
-    Args:
-        model: Model name or path (default: "all-MiniLM-L6-v2")
-        device: Device to run on ("cpu" or "cuda", default: auto-detect)
-    
-    Example:
-        >>> encoder = HuggingFaceEncoder()
-        >>> embeddings = encoder(["hello", "world"])
-        >>> print(embeddings.shape)  # (2, 384)
-    """
-    
-    def __init__(
-        self,
-        model: str = "all-MiniLM-L6-v2",
-        device: Optional[str] = None,
-    ):
-        self.model_name = model
-        self.model = SentenceTransformer(model, device=device)
-        self._dim = self.model.get_sentence_embedding_dimension()
-    
-    def __call__(self, texts: List[str]) -> np.ndarray:
-        """Encode texts using SentenceTransformer"""
-        if not texts:
-            return np.array([])
+    def encode(self, text: Union[str, List[str]]) -> np.ndarray:
+        """Encode text using sentence-transformers
+        
+        Args:
+            text: Single text or list of texts
+            
+        Returns:
+            numpy array of embeddings
+        """
+        if not text:
+            raise ValueError("Text cannot be empty")
+        
+        if isinstance(text, str):
+            text = [text]
+            single = True
+        else:
+            single = False
         
         try:
-            embeddings = self.model.encode(
-                texts,
-                show_progress_bar=False,
-                convert_to_numpy=True
-            )
+            embeddings = self.model.encode(text, convert_to_numpy=True)
             
-            return embeddings.astype(np.float32)
+            if single:
+                return embeddings[0]
+            return embeddings
         except Exception as e:
-            raise RuntimeError(f"HuggingFace encoding error: {e}") from e
+            raise RuntimeError(f"Encoding failed: {e}") from e
     
     @property
-    def dim(self) -> int:
-        """Return embedding dimension"""
-        return self._dim
-    
-    def __repr__(self) -> str:
-        return f"HuggingFaceEncoder(model='{self.model_name}', dim={self.dim})"
+    def dimension(self) -> int:
+        """Get embedding dimension"""
+        return self._dimension

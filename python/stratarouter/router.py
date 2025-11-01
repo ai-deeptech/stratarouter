@@ -1,215 +1,306 @@
-"""
-Main RouteLayer class - compatible with semantic-router API
-"""
+"""Main Router implementation with all bug fixes applied"""
 
-from typing import List, Optional, Union
-import numpy as np
+from typing import List, Optional, Dict, Any, Union
+from enum import Enum
+from pathlib import Path
+import time
+import json
+import warnings
+import threading
 
-from stratarouter.route import Route, RouteChoice
-from stratarouter.core import Router as RustRouter, RustRoute, ensure_list, ensure_2d_list
-from stratarouter.encoders.base import BaseEncoder
+from .types import Route, RouteResult
+from .encoders.base import BaseEncoder
 
 
-class RouteLayer:
+class DeploymentMode(str, Enum):
+    """Deployment modes"""
+    LOCAL = "local"
+    CLOUD = "cloud"
+
+
+class Router:
     """
-    High-performance semantic router.
+    High-performance semantic router
     
-    Drop-in replacement for semantic-router's RouteLayer with 10-20x better performance.
-    
-    Args:
-        encoder: Encoder instance for generating embeddings
-        routes: List of Route objects
-        top_k: Number of top matches to return (default: 1)
-        cache_size: Size of embedding cache (default: 1000)
-    
-    Example:
-        >>> from stratarouter import Route, RouteLayer
-        >>> from stratarouter.encoders import HuggingFaceEncoder
-        >>> 
-        >>> routes = [
-        ...     Route(name="billing", utterances=["invoice", "payment"]),
-        ...     Route(name="support", utterances=["help", "issue"])
-        ... ]
-        >>> 
-        >>> encoder = HuggingFaceEncoder()
-        >>> rl = RouteLayer(encoder=encoder, routes=routes)
-        >>> 
-        >>> result = rl("I need my invoice")
-        >>> print(result.name)  # "billing"
+    Examples:
+        >>> router = Router(mode="local")
+        >>> router.add(Route(id="billing", keywords=["invoice"]))
+        >>> result = router.route("I need my invoice")
+        >>> print(result.route_id)
+        'billing'
     """
     
     def __init__(
         self,
-        encoder: BaseEncoder,
-        routes: Optional[List[Route]] = None,
-        top_k: int = 1,
-        cache_size: int = 1000,
+        encoder: Optional[Union[str, BaseEncoder]] = None,
+        mode: DeploymentMode = DeploymentMode.LOCAL,
+        api_key: Optional[str] = None,
+        dimension: int = 384,
+        threshold: float = 0.5,
+        **kwargs
     ):
-        self.encoder = encoder
-        self.router = RustRouter(top_k=top_k, cache_size=cache_size)
-        self._routes = {}
+        # Validation
+        if dimension <= 0:
+            raise ValueError("dimension must be positive")
         
-        if routes:
-            for route in routes:
-                self.add(route)
+        if not 0.0 <= threshold <= 1.0:
+            raise ValueError("threshold must be between 0 and 1")
+        
+        self.mode = DeploymentMode(mode)
+        self.dimension = dimension
+        self.threshold = threshold
+        self.routes: Dict[str, Route] = {}
+        self._index_built = False
+        self._build_lock = threading.Lock()  # FIX: Thread safety
+        
+        if self.mode == DeploymentMode.LOCAL:
+            self._init_local_mode(encoder)
+        elif self.mode == DeploymentMode.CLOUD:
+            self._init_cloud_mode(api_key)
+    
+    def _init_local_mode(self, encoder: Optional[Union[str, BaseEncoder]]) -> None:
+        """Initialize local mode with encoder validation"""
+        if encoder is None:
+            encoder = "sentence-transformers/all-MiniLM-L6-v2"
+        
+        if isinstance(encoder, str):
+            encoder = self._load_encoder(encoder)
+        
+        # FIX: Validate encoder has required interface
+        if not hasattr(encoder, 'encode'):
+            raise TypeError("Encoder must have encode() method")
+        if not hasattr(encoder, 'dimension'):
+            raise TypeError("Encoder must have dimension property")
+        
+        self.encoder = encoder
+        
+        # Validate encoder dimension
+        if hasattr(encoder, 'dimension') and encoder.dimension != self.dimension:
+            warnings.warn(
+                f"Using encoder dimension ({encoder.dimension}) "
+                f"instead of specified dimension ({self.dimension})"
+            )
+            self.dimension = encoder.dimension
+        
+        # Initialize core
+        try:
+            from ._core import PyRouter
+            self._core = PyRouter(dimension=self.dimension, threshold=self.threshold)
+        except ImportError as e:
+            raise ImportError(
+                "Compiled core not found. Reinstall: "
+                "pip install --force-reinstall stratarouter"
+            ) from e
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize router: {e}") from e
+    
+    def _init_cloud_mode(self, api_key: Optional[str]) -> None:
+        """Initialize cloud mode"""
+        if not api_key:
+            raise ValueError(
+                "api_key required for cloud mode. "
+                "Get one at: https://cloud.stratarouter.io"
+            )
+        
+        self.api_key = api_key
+        
+        try:
+            from .cloud.client import CloudClient
+            self.cloud_client = CloudClient(api_key=api_key)
+        except ImportError as e:
+            raise ImportError(
+                "Cloud dependencies not installed. "
+                "Install: pip install stratarouter[cloud]"
+            ) from e
+    
+    def _load_encoder(self, model_name: str) -> BaseEncoder:
+        """Load encoder"""
+        try:
+            from .encoders.huggingface import HuggingFaceEncoder
+            return HuggingFaceEncoder(model_name)
+        except ImportError as e:
+            raise ImportError(
+                "HuggingFace encoder not available. "
+                "Install: pip install stratarouter[huggingface]"
+            ) from e
     
     def add(self, route: Route) -> None:
-        """
-        Add a route to the layer.
+        """Add route"""
+        if not route.id:
+            raise ValueError("Route ID cannot be empty")
         
-        Args:
-            route: Route object to add
+        if not route.examples and not route.description:
+            raise ValueError(
+                f"Route '{route.id}' must have examples or description"
+            )
         
-        Raises:
-            ValueError: If route with same name already exists
-        """
-        if route.name in self._routes:
-            raise ValueError(f"Route '{route.name}' already exists")
+        if route.id in self.routes:
+            warnings.warn(
+                f"Route '{route.id}' already exists. Overwriting. "
+                f"Call build_index() to update."
+            )
         
-        # Encode utterances
-        embeddings = self.encoder(route.utterances)
-        embeddings_list = ensure_2d_list(embeddings)
+        self.routes[route.id] = route
+        self._index_built = False
+    
+    def build_index(self) -> None:
+        """Build routing index with proper error handling"""
+        # FIX: Thread-safe index building
+        with self._build_lock:
+            self._index_built = False  # FIX: Reset on failure
+            
+            if self.mode == DeploymentMode.CLOUD:
+                warnings.warn("build_index() not needed in cloud mode")
+                return
+            
+            if not self.routes:
+                raise ValueError("No routes added. Use router.add(route) first.")
+            
+            embeddings = []
+            for route in self.routes.values():
+                text = route.examples[0] if route.examples else route.description
+                if not text:
+                    raise ValueError(f"Route '{route.id}' has no text to encode")
+                
+                try:
+                    emb = self.encoder.encode(text)
+                    if len(emb.shape) > 1:
+                        emb = emb[0]
+                    embeddings.append(emb.tolist())
+                except Exception as e:
+                    self._index_built = False  # FIX: Ensure flag is false
+                    raise RuntimeError(f"Failed to encode route '{route.id}': {e}") from e
+            
+            try:
+                self._core.build_index(embeddings)
+                self._index_built = True
+            except Exception as e:
+                self._index_built = False  # FIX: Ensure flag is false
+                raise RuntimeError(f"Failed to build index: {e}") from e
+    
+    def route(self, text: str, top_k: int = 1) -> RouteResult:
+        """Route query with comprehensive error handling"""
+        if not text or not text.strip():
+            raise ValueError("Query text cannot be empty")
         
-        # Create Rust route
-        rust_route = RustRoute(
-            name=route.name,
-            embeddings=embeddings_list,
-            threshold=route.threshold
+        start_time = time.perf_counter()
+        
+        if self.mode == DeploymentMode.CLOUD:
+            return self._route_cloud(text)
+        
+        if not self._index_built:
+            self.build_index()
+        
+        try:
+            embedding = self.encoder.encode(text)
+            if len(embedding.shape) > 1:
+                embedding = embedding[0]
+            
+            # FIX: Early dimension check with clear error
+            if len(embedding) != self.dimension:
+                raise ValueError(
+                    f"Encoder dimension mismatch: expected {self.dimension}, "
+                    f"got {len(embedding)}. Check encoder configuration."
+                )
+        except ValueError:
+            raise  # Re-raise ValueError as-is
+        except Exception as e:
+            raise RuntimeError(f"Failed to encode query: {e}") from e
+        
+        try:
+            result_dict = self._core.route(text, embedding.tolist())
+        except Exception as e:
+            raise RuntimeError(f"Routing failed: {e}") from e
+        
+        latency_ms = (time.perf_counter() - start_time) * 1000
+        
+        return RouteResult(
+            route_id=result_dict["route_id"],
+            confidence=result_dict["confidence"],
+            scores=result_dict["scores"],
+            latency_ms=latency_ms,
+        )
+    
+    def _route_cloud(self, text: str) -> RouteResult:
+        """Route using cloud"""
+        try:
+            return self.cloud_client.route(text)
+        except Exception as e:
+            raise RuntimeError(f"Cloud routing failed: {e}") from e
+    
+    def save(self, path: str) -> None:
+        """Save router with encoder configuration"""
+        path_obj = Path(path)
+        path_obj.parent.mkdir(parents=True, exist_ok=True)
+        
+        # FIX: Save encoder configuration
+        encoder_config = None
+        if hasattr(self, 'encoder'):
+            encoder_config = {
+                "type": self.encoder.__class__.__name__,
+                "model_name": getattr(self.encoder, 'model_name', None),
+                "dimension": self.encoder.dimension
+            }
+        
+        state = {
+            "version": "0.2.0",
+            "mode": self.mode.value,
+            "dimension": self.dimension,
+            "threshold": self.threshold,
+            "routes": [r.model_dump() for r in self.routes.values()],
+            "encoder_config": encoder_config,  # FIX: Include encoder config
+        }
+        
+        try:
+            with open(path_obj, "w") as f:
+                json.dump(state, f, indent=2)
+        except Exception as e:
+            raise RuntimeError(f"Failed to save: {e}") from e
+    
+    @classmethod
+    def load(cls, path: str, **kwargs) -> "Router":
+        """Load router with encoder validation"""
+        path_obj = Path(path)
+        
+        if not path_obj.exists():
+            raise FileNotFoundError(f"Router file not found: {path}")
+        
+        try:
+            with open(path_obj) as f:
+                state = json.load(f)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid router file: {e}") from e
+        
+        required = ["version", "dimension", "threshold", "routes"]
+        missing = [k for k in required if k not in state]
+        if missing:
+            raise ValueError(f"Missing required keys: {', '.join(missing)}")
+        
+        # FIX: Validate encoder compatibility
+        if 'encoder_config' in state and 'encoder' not in kwargs:
+            encoder_type = state['encoder_config'].get('type', 'unknown')
+            warnings.warn(
+                f"Router was saved with encoder {encoder_type}. "
+                f"Pass encoder=... to load() for best results."
+            )
+        
+        router = cls(
+            mode=kwargs.get("mode", state.get("mode", "local")),
+            dimension=state["dimension"],
+            threshold=state["threshold"],
+            **kwargs
         )
         
-        # Add to router
-        self.router.add(rust_route)
-        self._routes[route.name] = route
-    
-    def remove(self, name: str) -> None:
-        """
-        Remove a route by name.
+        for route_data in state["routes"]:
+            try:
+                router.add(Route(**route_data))
+            except Exception as e:
+                warnings.warn(f"Failed to load route: {e}")
         
-        Args:
-            name: Name of route to remove
+        if router.mode == DeploymentMode.LOCAL:
+            try:
+                router.build_index()
+            except Exception as e:
+                warnings.warn(f"Failed to build index: {e}")
         
-        Raises:
-            ValueError: If route doesn't exist
-        """
-        if name not in self._routes:
-            raise ValueError(f"Route '{name}' not found")
-        
-        self.router.remove(name)
-        del self._routes[name]
-    
-    def __call__(
-        self,
-        text: Union[str, List[str]],
-        threshold: Optional[float] = None,
-    ) -> Union[RouteChoice, List[RouteChoice]]:
-        """
-        Route input text to matching routes.
-        
-        Args:
-            text: Input text or list of texts
-            threshold: Optional custom threshold (overrides per-route thresholds)
-        
-        Returns:
-            RouteChoice or list of RouteChoice objects
-        
-        Example:
-            >>> result = rl("hello there")
-            >>> print(result.name)  # "chitchat"
-            >>> print(result.score)  # 0.95
-        """
-        is_single = isinstance(text, str)
-        texts = [text] if is_single else text
-        
-        # Validate inputs
-        for txt in texts:
-            if not txt or not txt.strip():
-                raise ValueError("Empty or whitespace-only text cannot be routed")
-        
-        results = []
-        for txt in texts:
-            # Encode query
-            embedding = self.encoder([txt])[0]
-            embedding_list = ensure_list(embedding)
-            
-            # Route
-            if threshold is not None:
-                matches = self.router.route_with_threshold(embedding_list, threshold)
-            else:
-                matches = self.router.route(embedding_list)
-            
-            # Convert to RouteChoice
-            if matches and matches[0].is_match:
-                match = matches[0]
-                route = self._routes.get(match.name)
-                choice = RouteChoice(
-                    name=match.name,
-                    score=match.score,
-                    threshold=match.threshold,
-                    metadata=route.metadata if route else {}
-                )
-            else:
-                choice = RouteChoice(name=None, score=0.0, threshold=0.82)
-            
-            results.append(choice)
-        
-        return results[0] if is_single else results
-    
-    def route(
-        self,
-        text: str,
-        threshold: Optional[float] = None,
-    ) -> RouteChoice:
-        """
-        Route a single text (alias for __call__).
-        
-        Args:
-            text: Input text
-            threshold: Optional custom threshold
-        
-        Returns:
-            RouteChoice object
-        """
-        return self(text, threshold=threshold)
-    
-    def route_batch(
-        self,
-        texts: List[str],
-        threshold: Optional[float] = None,
-    ) -> List[RouteChoice]:
-        """
-        Route multiple texts in batch.
-        
-        Args:
-            texts: List of input texts
-            threshold: Optional custom threshold
-        
-        Returns:
-            List of RouteChoice objects
-        """
-        return self(texts, threshold=threshold)
-    
-    @property
-    def routes(self) -> List[Route]:
-        """Get list of all routes"""
-        return list(self._routes.values())
-    
-    @property
-    def num_routes(self) -> int:
-        """Get number of routes"""
-        return len(self._routes)
-    
-    def list_route_names(self) -> List[str]:
-        """Get list of route names"""
-        return list(self._routes.keys())
-    
-    def clear(self) -> None:
-        """Remove all routes"""
-        self.router.clear()
-        self._routes.clear()
-    
-    def clear_cache(self) -> None:
-        """Clear the embedding cache"""
-        self.router.clear_cache()
-    
-    def __repr__(self) -> str:
-        return f"RouteLayer(routes={self.num_routes}, encoder={self.encoder.__class__.__name__})"
+        return router

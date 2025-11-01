@@ -1,80 +1,93 @@
-"""
-OpenAI encoder implementation
-"""
+"""OpenAI encoder implementation"""
 
-from typing import List, Optional
+from typing import Union, List, Optional
 import numpy as np
-
-try:
-    from openai import OpenAI
-except ImportError:
-    raise ImportError(
-        "OpenAI not installed. Install with: pip install stratarouter[openai]"
-    )
-
-from stratarouter.encoders.base import BaseEncoder
+from .base import BaseEncoder
 
 
 class OpenAIEncoder(BaseEncoder):
-    """
-    OpenAI embedding encoder.
+    """OpenAI embeddings encoder
     
-    Uses OpenAI's embedding API to generate embeddings.
+    Uses OpenAI's embedding API for encoding.
     
-    Args:
-        model: Model name (default: "text-embedding-3-small")
-        api_key: OpenAI API key (reads from OPENAI_API_KEY env var if not provided)
-    
-    Example:
-        >>> encoder = OpenAIEncoder()
-        >>> embeddings = encoder(["hello", "world"])
-        >>> print(embeddings.shape)  # (2, 1536)
+    Examples:
+        >>> encoder = OpenAIEncoder(api_key="sk-...")
+        >>> embedding = encoder.encode("Hello world")
+        >>> embedding.shape
+        (1536,)
     """
     
     def __init__(
         self,
         model: str = "text-embedding-3-small",
         api_key: Optional[str] = None,
+        organization: Optional[str] = None,
+        **kwargs
     ):
+        """Initialize OpenAI encoder
+        
+        Args:
+            model: Model name (text-embedding-3-small, text-embedding-3-large, etc.)
+            api_key: OpenAI API key (or set OPENAI_API_KEY env var)
+            organization: OpenAI organization ID
+            **kwargs: Additional arguments for OpenAI client
+        """
+        try:
+            from openai import OpenAI
+        except ImportError as e:
+            raise ImportError(
+                "OpenAI package not installed. "
+                "Install: pip install stratarouter[openai]"
+            ) from e
+        
         self.model = model
-        self.client = OpenAI(api_key=api_key)
-        self._dim = self._get_dimension()
+        self.client = OpenAI(
+            api_key=api_key,
+            organization=organization,
+            **kwargs
+        )
+        
+        # Dimension mapping
+        self._dimension = {
+            "text-embedding-3-small": 1536,
+            "text-embedding-3-large": 3072,
+            "text-embedding-ada-002": 1536,
+        }.get(model, 1536)
     
-    def __call__(self, texts: List[str]) -> np.ndarray:
-        """Encode texts using OpenAI API"""
-        if not texts:
-            return np.array([])
+    def encode(self, text: Union[str, List[str]]) -> np.ndarray:
+        """Encode text using OpenAI API
+        
+        Args:
+            text: Single text or list of texts
+            
+        Returns:
+            numpy array of embeddings
+        """
+        if not text:
+            raise ValueError("Text cannot be empty")
+        
+        if isinstance(text, str):
+            text = [text]
+            single = True
+        else:
+            single = False
         
         try:
             response = self.client.embeddings.create(
                 model=self.model,
-                input=texts
+                input=text
             )
             
-            embeddings = [item.embedding for item in response.data]
-            return np.array(embeddings, dtype=np.float32)
+            embeddings = np.array([item.embedding for item in response.data])
+            
+            if single:
+                return embeddings[0]
+            return embeddings
+            
         except Exception as e:
             raise RuntimeError(f"OpenAI API error: {e}") from e
     
     @property
-    def dim(self) -> int:
-        """Return embedding dimension"""
-        return self._dim
-    
-    def _get_dimension(self) -> int:
-        """Get embedding dimension by encoding a test string"""
-        try:
-            test_embedding = self(["test"])[0]
-            return len(test_embedding)
-        except Exception:
-            # Default dimensions for known models
-            if "text-embedding-3-small" in self.model:
-                return 1536
-            elif "text-embedding-3-large" in self.model:
-                return 3072
-            elif "text-embedding-ada-002" in self.model:
-                return 1536
-            return 1536  # Default fallback
-    
-    def __repr__(self) -> str:
-        return f"OpenAIEncoder(model='{self.model}', dim={self.dim})"
+    def dimension(self) -> int:
+        """Get embedding dimension"""
+        return self._dimension

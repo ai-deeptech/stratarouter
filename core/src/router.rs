@@ -1,181 +1,305 @@
-use crate::cache::EmbeddingCache;
-use crate::error::StrataError;
-use crate::route::{Route, RouteMatch};
-use dashmap::DashMap;
-use pyo3::prelude::*;
-use std::sync::Arc;
+//! Main router implementation
 
-#[pyclass]
-pub struct Router {
-    routes: Arc<DashMap<String, Route>>,
-    cache: EmbeddingCache,
-    #[pyo3(get, set)]
+use crate::algorithms::{HybridScorer, CalibrationManager};
+use crate::index::hnsw::HnswIndex;
+use crate::types::{Route, RouteResult, RouteScores};
+use crate::error::{Error, Result};
+use std::collections::HashMap;
+use std::time::Instant;
+
+/// Router configuration
+#[derive(Debug, Clone)]
+pub struct RouterConfig {
+    /// Embedding dimension
+    pub dimension: usize,
+    /// Default confidence threshold
+    pub default_threshold: f32,
+    /// Number of top candidates to consider
     pub top_k: usize,
+    /// Enable confidence calibration
+    pub enable_calibration: bool,
 }
 
-#[pymethods]
-impl Router {
-    #[new]
-    #[pyo3(signature = (top_k=1, cache_size=1000))]
-    pub fn new(top_k: usize, cache_size: usize) -> Self {
+impl Default for RouterConfig {
+    fn default() -> Self {
         Self {
-            routes: Arc::new(DashMap::new()),
-            cache: EmbeddingCache::new(cache_size),
-            top_k: if top_k == 0 { 1 } else { top_k },
+            dimension: 384,
+            default_threshold: 0.5,
+            top_k: 5,
+            enable_calibration: true,
+        }
+    }
+}
+
+impl RouterConfig {
+    /// Validate configuration
+    pub fn validate(&self) -> Result<()> {
+        if self.dimension == 0 {
+            return Err(Error::invalid_input("Dimension must be positive"));
+        }
+        
+        if !(0.0..=1.0).contains(&self.default_threshold) {
+            return Err(Error::invalid_input(
+                "Threshold must be between 0 and 1"
+            ));
+        }
+        
+        if self.top_k == 0 {
+            return Err(Error::invalid_input("top_k must be positive"));
+        }
+        
+        Ok(())
+    }
+}
+
+/// Main router for semantic routing
+pub struct Router {
+    config: RouterConfig,
+    routes: HashMap<String, Route>,
+    route_ids: Vec<String>,
+    index: Option<HnswIndex>,
+    hybrid_scorer: HybridScorer,
+    calibration_manager: CalibrationManager,
+}
+
+impl Router {
+    /// Create new router with configuration
+    pub fn new(config: RouterConfig) -> Self {
+        Self {
+            config,
+            routes: HashMap::new(),
+            route_ids: Vec::new(),
+            index: None,
+            hybrid_scorer: HybridScorer::new(),
+            calibration_manager: CalibrationManager::new(),
         }
     }
     
-    pub fn add(&self, route: Route) -> PyResult<()> {
-        let name = route.name.clone();
+    /// Add route to router
+    pub fn add_route(&mut self, route: Route) -> Result<()> {
+        route.validate()?;
         
-        if self.routes.contains_key(&name) {
-            return Err(StrataError::DuplicateRoute(name).into());
-        }
-        
-        self.routes.insert(name, route);
+        self.route_ids.push(route.id.clone());
+        self.routes.insert(route.id.clone(), route);
         Ok(())
     }
     
-    pub fn remove(&self, name: String) -> PyResult<()> {
-        if self.routes.remove(&name).is_none() {
-            return Err(StrataError::RouteNotFound(name).into());
+    /// Build routing index from embeddings
+    pub fn build_index(&mut self, embeddings: Vec<Vec<f32>>) -> Result<()> {
+        if embeddings.is_empty() {
+            return Err(Error::invalid_input("No embeddings provided"));
         }
+        
+        if embeddings.len() != self.routes.len() {
+            return Err(Error::invalid_input(
+                &format!(
+                    "Embedding count ({}) doesn't match route count ({})",
+                    embeddings.len(),
+                    self.routes.len()
+                )
+            ));
+        }
+        
+        let dimension = embeddings[0].len();
+        if dimension != self.config.dimension {
+            return Err(Error::dimension_mismatch(
+                self.config.dimension,
+                dimension
+            ));
+        }
+        
+        // Validate all embeddings have same dimension
+        for embedding in embeddings.iter() {
+            if embedding.len() != dimension {
+                return Err(Error::dimension_mismatch(
+                    dimension,
+                    embedding.len()
+                ));
+            }
+        }
+        
+        let mut index = HnswIndex::new(dimension);
+        for (i, embedding) in embeddings.into_iter().enumerate() {
+            index.add(i, embedding);
+        }
+        
+        self.index = Some(index);
         Ok(())
     }
     
-    pub fn get(&self, name: String) -> PyResult<Route> {
-        self.routes
-            .get(&name)
-            .map(|r| r.value().clone())
-            .ok_or_else(|| StrataError::RouteNotFound(name).into())
-    }
-    
-    pub fn route(&self, query_embedding: Vec<f32>) -> PyResult<Vec<RouteMatch>> {
-        if query_embedding.is_empty() {
-            return Err(StrataError::InvalidInput("Empty query embedding".to_string()).into());
+    /// Route query to best matching route
+    pub fn route(&mut self, text: &str, embedding: &[f32]) -> Result<RouteResult> {
+        let start = Instant::now();
+        
+        // Validate inputs
+        if text.is_empty() {
+            return Err(Error::invalid_input("Query text cannot be empty"));
         }
         
-        if self.routes.is_empty() {
-            return Ok(vec![]);
+        if embedding.is_empty() {
+            return Err(Error::invalid_input("Embedding cannot be empty"));
         }
         
-        // Collect all route matches
-        let mut matches: Vec<RouteMatch> = self.routes
-            .iter()
-            .map(|entry| {
-                let route = entry.value();
-                let score = route.score(&query_embedding);
-                RouteMatch::new(route.name.clone(), score, route.threshold)
-            })
-            .collect();
+        let index = self.index.as_ref()
+            .ok_or(Error::IndexNotBuilt)?;
         
-        // Sort by score (highest first)
-        matches.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
-        
-        // Return top_k matches
-        matches.truncate(self.top_k);
-        
-        Ok(matches)
-    }
-    
-    pub fn route_with_threshold(&self, query_embedding: Vec<f32>, threshold: f32) -> PyResult<Vec<RouteMatch>> {
-        if !(0.0..=1.0).contains(&threshold) {
-            return Err(StrataError::InvalidThreshold(threshold).into());
+        if embedding.len() != self.config.dimension {
+            return Err(Error::dimension_mismatch(
+                self.config.dimension,
+                embedding.len()
+            ));
         }
         
-        let all_matches = self.route(query_embedding)?;
-        Ok(all_matches.into_iter().filter(|m| m.score >= threshold).collect())
+        if index.is_empty() {
+            return Err(Error::NoRoutes);
+        }
+        
+        let neighbors = index.search(embedding, self.config.top_k);
+        
+        if neighbors.is_empty() {
+            return Err(Error::NoRoutes);
+        }
+        
+        // Find best route
+        let mut best_route_id = String::new();
+        let mut best_score = 0.0;
+        let mut best_scores = RouteScores::zero();
+        
+        for (idx, distance) in neighbors {
+            if idx >= self.route_ids.len() {
+                continue;
+            }
+            
+            let route_id = &self.route_ids[idx];
+            let route = match self.routes.get(route_id) {
+                Some(r) => r,
+                None => continue,
+            };
+            
+            // Compute scores
+            let dense_score = (1.0 - distance).max(0.0);
+            let sparse_score = self.hybrid_scorer.compute_sparse_score(text, route);
+            let rule_score = self.hybrid_scorer.compute_rule_score(text, route);
+            
+            let fused_score = self.hybrid_scorer.fuse_scores(
+                dense_score,
+                sparse_score,
+                rule_score,
+            );
+            
+            // Apply calibration if enabled
+            let (calibrated_score, _uncertainty) = if self.config.enable_calibration {
+                self.calibration_manager.calibrate_for_route(route_id, fused_score)
+            } else {
+                (fused_score, 0.0)
+            };
+            
+            if calibrated_score > best_score {
+                best_score = calibrated_score;
+                best_route_id = route_id.clone();
+                best_scores = RouteScores {
+                    semantic: dense_score,
+                    keyword: sparse_score,
+                    pattern: rule_score,
+                    total: fused_score,
+                    confidence: calibrated_score,
+                };
+            }
+        }
+        
+        if best_route_id.is_empty() {
+            return Err(Error::NoRoutes);
+        }
+        
+        let route = self.routes.get(&best_route_id).ok_or_else(|| {
+            Error::RouteNotFound {
+                route_id: best_route_id.clone(),
+            }
+        })?;
+        
+        // Convert to microseconds first, then to milliseconds to preserve precision
+        let latency_us = start.elapsed().as_micros() as u64;
+        let latency_ms = (latency_us as f64 / 1000.0).ceil() as u64; // Ensure at least 1ms
+        
+        Ok(RouteResult {
+            route_id: best_route_id,
+            scores: best_scores,
+            metadata: route.metadata.clone(),
+            latency_ms,
+        })
     }
     
-    #[getter]
-    pub fn num_routes(&self) -> usize {
+    /// Get number of routes
+    pub fn route_count(&self) -> usize {
         self.routes.len()
     }
     
-    pub fn list_routes(&self) -> Vec<String> {
-        self.routes.iter().map(|entry| entry.key().clone()).collect()
-    }
-    
-    pub fn clear(&self) {
-        self.routes.clear();
-        self.cache.clear();
-    }
-    
-    #[getter]
-    pub fn cache_size(&self) -> usize {
-        self.cache.len()
-    }
-    
-    pub fn clear_cache(&self) {
-        self.cache.clear();
-    }
-    
-    pub fn __repr__(&self) -> String {
-        format!(
-            "Router(routes={}, top_k={}, cache_size={})",
-            self.num_routes(),
-            self.top_k,
-            self.cache_size()
-        )
-    }
-}
-
-impl Clone for Router {
-    fn clone(&self) -> Self {
-        Self {
-            routes: Arc::clone(&self.routes),
-            cache: self.cache.clone(),
-            top_k: self.top_k,
-        }
+    /// Check if index is built
+    pub fn is_index_built(&self) -> bool {
+        self.index.is_some()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    
     #[test]
     fn test_router_creation() {
-        let router = Router::new(5, 1000);
-        assert_eq!(router.num_routes(), 0);
-        assert_eq!(router.top_k, 5);
+        let config = RouterConfig::default();
+        config.validate().unwrap();
+        let router = Router::new(config);
+        assert_eq!(router.route_count(), 0);
+        assert!(!router.is_index_built());
     }
-
+    
     #[test]
     fn test_add_route() {
-        let router = Router::new(1, 1000);
-        let route = Route::new(
-            "test".to_string(),
-            vec![vec![1.0, 0.0]],
-            0.8,
-        ).unwrap();
+        let mut router = Router::new(RouterConfig::default());
+        let route = Route {
+            id: "test".into(),
+            description: "Test route".into(),
+            examples: vec!["hello".into()],
+            keywords: vec!["hello".into()],
+            patterns: vec![],
+            metadata: HashMap::new(),
+            threshold: None,
+            tags: vec![],
+        };
         
-        router.add(route).unwrap();
-        assert_eq!(router.num_routes(), 1);
-        assert!(router.list_routes().contains(&"test".to_string()));
+        router.add_route(route).unwrap();
+        assert_eq!(router.route_count(), 1);
     }
-
+    
     #[test]
-    fn test_route_query() {
-        let router = Router::new(10, 1000);
+    fn test_config_validation() {
+        let config = RouterConfig::default();
+        assert!(config.validate().is_ok());
         
-        let route1 = Route::new(
-            "politics".to_string(),
-            vec![vec![1.0, 0.0, 0.0]],
-            0.7,
-        ).unwrap();
+        let invalid_config = RouterConfig {
+            dimension: 0,
+            ..Default::default()
+        };
+        assert!(invalid_config.validate().is_err());
         
-        let route2 = Route::new(
-            "chitchat".to_string(),
-            vec![vec![0.0, 1.0, 0.0]],
-            0.7,
-        ).unwrap();
-        
-        router.add(route1).unwrap();
-        router.add(route2).unwrap();
-        
-        let matches = router.route(vec![1.0, 0.0, 0.0]).unwrap();
-        assert_eq!(matches[0].name, "politics");
-        assert!(matches[0].score > 0.9);
+        let invalid_threshold = RouterConfig {
+            default_threshold: 1.5,
+            ..Default::default()
+        };
+        assert!(invalid_threshold.validate().is_err());
+    }
+    
+    #[test]
+    fn test_build_index_empty() {
+        let mut router = Router::new(RouterConfig::default());
+        let result = router.build_index(vec![]);
+        assert!(result.is_err());
+    }
+    
+    #[test]
+    fn test_route_without_index() {
+        let mut router = Router::new(RouterConfig::default());
+        let result = router.route("test", &[0.5; 384]);
+        assert!(matches!(result, Err(Error::IndexNotBuilt)));
     }
 }

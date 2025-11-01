@@ -1,26 +1,18 @@
-"""
-Encoder implementations for different embedding providers
-"""
+"""Encoder implementations for StrataRouter"""
 
-from stratarouter.encoders.base import BaseEncoder
+from .base import BaseEncoder
 
 __all__ = ["BaseEncoder"]
 
-# Optional imports
+# Conditional imports for optional dependencies
 try:
-    from stratarouter.encoders.openai import OpenAIEncoder
-    __all__.append("OpenAIEncoder")
-except ImportError:
-    pass
-
-try:
-    from stratarouter.encoders.cohere import CohereEncoder
-    __all__.append("CohereEncoder")
-except ImportError:
-    pass
-
-try:
-    from stratarouter.encoders.huggingface import HuggingFaceEncoder
+    from .huggingface import HuggingFaceEncoder
     __all__.append("HuggingFaceEncoder")
+except ImportError:
+    pass
+
+try:
+    from .openai import OpenAIEncoder
+    __all__.append("OpenAIEncoder")
 except ImportError:
     pass
