@@ -1,0 +1,81 @@
+[build-system]
+requires = ["maturin>=1.4,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "stratarouter"
+version = "0.1.0"
+description = "High-performance semantic routing - 10x faster than semantic-router"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [
+    { name = "StrataRouter Team", email = "team@stratarouter.dev" }
+]
+keywords = ["routing", "semantic", "embeddings", "llm", "ai", "nlp"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "numpy>=1.21.0",
+    "pydantic>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+openai = ["openai>=1.0.0"]
+cohere = ["cohere>=4.0.0"]
+huggingface = ["sentence-transformers>=2.2.0"]
+all = [
+    "openai>=1.0.0",
+    "cohere>=4.0.0",
+    "sentence-transformers>=2.2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/stratarouter/stratarouter"
+Documentation = "https://github.com/stratarouter/stratarouter/blob/main/README.md"
+Repository = "https://github.com/stratarouter/stratarouter"
+"Bug Tracker" = "https://github.com/stratarouter/stratarouter/issues"
+
+[tool.maturin]
+python-source = "python"
+module-name = "stratarouter._core"
+features = ["pyo3/extension-module"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

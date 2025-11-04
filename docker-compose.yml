@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  stratarouter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - ENCODER_MODEL=all-MiniLM-L6-v2
+      - TOP_K=3
+      - CACHE_SIZE=1000
+    volumes:
+      - ./server:/app/server
+    restart: unless-stopped

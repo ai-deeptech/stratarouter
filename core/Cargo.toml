@@ -1,0 +1,36 @@
+[package]
+name = "stratarouter-core"
+version = "0.1.0"
+edition = "2021"
+authors = ["StrataRouter Team"]
+description = "High-performance semantic routing engine in Rust"
+license = "MIT"
+repository = "https://github.com/stratarouter/stratarouter"
+keywords = ["routing", "semantic", "embeddings", "nlp", "ai"]
+categories = ["algorithms", "science"]
+
+[lib]
+name = "stratarouter_core"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+pyo3 = { version = "0.20", features = ["extension-module"] }
+numpy = "0.20"
+ndarray = "0.15"
+dashmap = "5.5"
+parking_lot = "0.12"
+ahash = "0.8"
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+lru = "0.12"
+
+[dev-dependencies]
+criterion = "0.5"
+approx = "0.5"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
