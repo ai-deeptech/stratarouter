@@ -1,109 +1,50 @@
-"""
-StrataRouter Quick Start Example
+"""Quickstart example for StrataRouter"""
 
-This example shows the basics of using StrataRouter.
-"""
-
-from stratarouter import Route, RouteLayer
-from stratarouter.encoders import HuggingFaceEncoder
-
+from stratarouter_core.stratarouter_core import PyRouter, PyRoute
+import numpy as np
 
 def main():
-    print("StrataRouter Quick Start\n")
+    # Create router with default config
+    router = PyRouter(dimension=384, threshold=0.3)
     
-    # 1. Define your routes
-    print("1. Defining routes...")
-    routes = [
-        Route(
-            name="billing",
-            utterances=[
-                "I need my invoice",
-                "Where is my receipt?",
-                "Payment question",
-                "Refund request",
-                "Billing issue"
-            ],
-            threshold=0.75
-        ),
-        Route(
-            name="support",
-            utterances=[
-                "I need help",
-                "Technical issue",
-                "How do I use this?",
-                "Support question",
-                "Something is broken"
-            ],
-            threshold=0.75
-        ),
-        Route(
-            name="chitchat",
-            utterances=[
-                "Hello",
-                "Hi there",
-                "How are you?",
-                "Good morning",
-                "Nice to meet you"
-            ],
-            threshold=0.75
-        )
+    # Add routes
+    billing_route = PyRoute("billing")
+    billing_route.description = "Billing and payment queries"
+    billing_route.examples = [
+        "I need my invoice",
+        "Where is my bill?",
+        "Payment issue"
     ]
-    print(f"   Created {len(routes)} routes\n")
+    billing_route.keywords = ["invoice", "bill", "payment", "charge"]
     
-    # 2. Create encoder (local, fast, free!)
-    print("2. Loading encoder...")
-    encoder = HuggingFaceEncoder(model="all-MiniLM-L6-v2")
-    print(f"   Loaded {encoder}\n")
-    
-    # 3. Create router
-    print("3. Creating router...")
-    rl = RouteLayer(encoder=encoder, routes=routes)
-    print(f"   {rl}\n")
-    
-    # 4. Route some queries
-    print("4. Routing queries...\n")
-    
-    test_queries = [
-        "I need my invoice from last month",
-        "Hey, how's it going?",
-        "My app is not working",
-        "Good morning!",
-        "Where can I find my receipt?"
+    support_route = PyRoute("support")
+    support_route.description = "Technical support"
+    support_route.examples = [
+        "App is crashing",
+        "Can't login",
+        "Error message"
     ]
+    support_route.keywords = ["error", "crash", "bug", "issue"]
     
-    for query in test_queries:
-        result = rl(query)
-        
-        if result.is_match:
-            print(f"   Query: '{query}'")
-            print(f"   → Route: {result.name}")
-            print(f"   → Score: {result.score:.3f}")
-            print(f"   → Match: ✓\n")
-        else:
-            print(f"   Query: '{query}'")
-            print(f"   → No match found\n")
+    # Add routes to router
+    router.add_route(billing_route)
+    router.add_route(support_route)
     
-    # 5. Batch processing
-    print("5. Batch processing...\n")
-    
-    batch_queries = [
-        "I want a refund",
-        "Hello there!",
-        "Help me fix this bug"
+    # Build index with dummy embeddings (in production, use real embeddings)
+    embeddings = [
+        np.random.randn(384).tolist(),
+        np.random.randn(384).tolist()
     ]
+    router.build_index(embeddings)
     
-    results = rl.route_batch(batch_queries)
+    # Route a query
+    query_embedding = np.random.randn(384).tolist()
+    result = router.route("I need my invoice for last month", query_embedding)
     
-    for query, result in zip(batch_queries, results):
-        print(f"   '{query}' → {result.name} ({result.score:.3f})")
-    
-    print("\n✨ Done! StrataRouter is 10x faster than semantic-router!")
-
+    print(f"✓ Routed to: {result['route_id']}")
+    print(f"✓ Confidence: {result['confidence']:.3f}")
+    print(f"✓ Scores: {result['scores']}")
+    print(f"✓ Latency: {result['latency_us']}μs")
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        print(f"\n❌ Error: {e}")
-        print("\nMake sure you have installed stratarouter with:")
-        print("  pip install stratarouter[huggingface]")
+    main()
