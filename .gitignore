@@ -1,73 +1,81 @@
-# Rust
-/target/
-/core/target/
+# ── Rust build output ─────────────────────────────────────────────────────────
+target/
 **/*.rs.bk
-Cargo.lock
+*.pdb
 
-# Python
+# ── Compiled Python extensions — NEVER push pre-built binaries ───────────────
+# Developer installs from source: maturin develop --release
+*.so
+*.pyd
+*.dylib
+_native.abi3.*
+stratarouter_core*.so
+stratarouter_core*.pyd
+
+# ── Rust backup / draft files ─────────────────────────────────────────────────
+*.rs.backup
+ffi.rs.backup
+backup_router.rs
+
+# ── Python bytecode / packaging ───────────────────────────────────────────────
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
-venv/
-ENV/
-env/
-.venv
-.python-version
-
-# IDEs
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-.DS_Store
-
-# Testing
-.pytest_cache/
-.coverage
-htmlcov/
-.tox/
-.hypothesis/
-
-# Maturin
+dist/
+build/
+.eggs/
 *.whl
 
-# Environment variables
-.env
-.env.local
+# ── Virtualenvs ───────────────────────────────────────────────────────────────
+venv/
+venv311/
+.venv/
+env/
+ENV/
+.Python
 
-# macOS
+# ── IDE ───────────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
 .DS_Store
-
-# Windows
 Thumbs.db
-ehthumbs.db
-Desktop.ini
 
-# Logs
-*.log
-logs/
+# !! SECRETS — never commit these !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+.env
+.env.*
+*.pem
+*.key
+*.cert
+*.p12
+PyPI-Recovery-Codes-*
+agentdyne_codes.txt
+agentdyne_full_export.sql
 
-# Server
-server/.env
-server/__pycache__/
+# ── Private scripts (never in OSS repo) ──────────────────────────────────────
+capture_claude.sh
+fix_auth_and_push.sh
+core2_git.sh
+core_git.sh
+run_coverage.sh
+
+# ── Codebase snapshots ────────────────────────────────────────────────────────
+stratarouter_codebase_*.txt
+
+# ── Build artifacts ───────────────────────────────────────────────────────────
+*.zip
+*.tar.gz
+cargo_warnings.txt
+
+# ── Test / coverage output ────────────────────────────────────────────────────
+.coverage
+coverage/
+htmlcov/
+.pytest_cache/
+*.lcov
+tarpaulin-report.html
+core/coverage/
+
+# ── Docs build ────────────────────────────────────────────────────────────────
+site/
+docs/_build/

@@ -1,70 +1,103 @@
-# Contributing to StrataRouter
+"""
+# Contributing to StrataRouter Lite
 
-Thank you for your interest in contributing to StrataRouter!
+Thank you for your interest in contributing! 🎉
+
+## Getting Started
+
+1. Fork the repository
+2. Clone your fork:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/stratarouter.git
+   cd stratarouter
+   ```
+3. Create a branch:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
 
 ## Development Setup
 
-1. **Clone the repository**
+### Requirements
+- Python 3.8+
+- Rust 1.70+
+- cargo (Rust package manager)
+
+### Setup Steps
+
 ```bash
-git clone https://github.com/stratarouter/stratarouter
-cd stratarouter
+# Run setup script
+./scripts/setup_dev.sh
+
+# Or manually:
+pip install -e ".[dev]"
+cd core
+cargo build --release
+cargo test
 ```
-
-2. **Install dependencies**
-```bash
-./scripts/install_dev.sh
-```
-
-3. **Run tests**
-```bash
-./scripts/test_all.sh
-```
-
-## Making Changes
-
-1. Create a new branch
-```bash
-git checkout -b feature/your-feature-name
-```
-
-2. Make your changes
-
-3. Run tests
-```bash
-./scripts/test_all.sh
-```
-
-4. Format code
-```bash
-# Rust
-cd core && cargo fmt
-
-# Python
-cd python && black stratarouter/
-```
-
-5. Commit and push
-```bash
-git commit -m "feat: your feature description"
-git push origin feature/your-feature-name
-```
-
-6. Create a Pull Request
 
 ## Code Style
 
-- **Rust**: Follow standard Rust conventions, use `cargo fmt` and `cargo clippy`
-- **Python**: Follow PEP 8, use `black` for formatting, line length 100
-- **Tests**: Write tests for all new features
-- **Documentation**: Update README and docstrings
+### Python
+- Follow PEP 8
+- Use Black: `black python/`
+- Use Ruff: `ruff check python/`
+- Type hints required
+- Max line length: 100
 
-## Running Examples
+### Rust
+- Follow Rust style guide
+- Use rustfmt: `cargo fmt`
+- Use clippy: `cargo clippy -- -D warnings`
+- Document public APIs
+
+## Testing
+
 ```bash
-python examples/quickstart.py
-python examples/fastapi_example.py
-python examples/batch_processing.py
+# All tests
+./scripts/test_all.sh
+
+# Python only
+pytest tests/ -v --cov=stratarouter
+
+# Rust only
+cd core && cargo test --release
 ```
+
+## Pull Request Process
+
+1. **Update documentation** for any changes
+2. **Add tests** for new features
+3. **Ensure all tests pass**
+4. **Update CHANGELOG.md**
+5. **Submit PR** with clear description
+
+### PR Title Format
+- `feat: Add new feature`
+- `fix: Fix bug description`
+- `docs: Update documentation`
+- `test: Add tests`
+- `refactor: Refactor code`
+
+## Code Review Checklist
+
+- [ ] Code follows style guidelines
+- [ ] Tests added and passing
+- [ ] Documentation updated
+- [ ] No breaking changes (or clearly documented)
+- [ ] CHANGELOG.md updated
+- [ ] Commit messages are clear
 
 ## Questions?
 
-Open an issue on GitHub or join our Discord community.
+- GitHub Issues: Bug reports and feature requests
+- Email: hello@inteleion.ai
+
+## License
+
+By contributing, you agree that your contributions will be licensed under the MIT License.
+
+---
+
+Thank you for making StrataRouter better! 🚀
+"""
