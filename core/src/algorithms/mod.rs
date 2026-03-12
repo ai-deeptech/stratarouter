@@ -1,8 +1,8 @@
-//! Algorithm implementations for routing
+//! Algorithm implementations for semantic routing.
 pub mod calibration;
 pub mod hybrid_scoring;
-pub mod simd_ops;
+pub mod vector_ops;
 
-// Export what's used by other modules
+// Scalar / SIMD-ready ops kept internal — imported directly by the index.
 pub use calibration::CalibrationManager;
 pub use hybrid_scoring::HybridScorer;
