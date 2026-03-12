@@ -1,7 +1,7 @@
 """Generic adapter for any framework"""
 
 from typing import Dict, Any, Callable, Optional
-from ..types import Route
+from ..route import Route
 
 
 class GenericRouterAdapter:
