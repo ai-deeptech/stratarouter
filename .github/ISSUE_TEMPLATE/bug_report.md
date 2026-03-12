@@ -1,17 +1,26 @@
 ---
-name: Bug Report
-labels: ["bug", "triage"]
+name: Bug report
+about: Something is broken
+labels: bug
 ---
-**StrataRouter version** (`pip show stratarouter | grep Version`):
-**Python / OS**:
-**Encoder**:
 
-**What happened**:
+**Describe the bug**
+A clear description of what is wrong.
 
-**Minimal reproduction**:
+**To reproduce**
 ```python
+# Minimal code to reproduce
 ```
 
-**Error / traceback**:
-```
-```
+**Expected behaviour**
+What you expected to happen.
+
+**Actual behaviour**
+What actually happened. Include the full traceback if applicable.
+
+**Environment**
+- StrataRouter version: `python -c "import stratarouter; print(stratarouter.__version__)"`
+- Python version: `python --version`
+- OS: (e.g. Ubuntu 22.04, macOS 14, Windows 11)
+- Encoder: (e.g. HuggingFaceEncoder, OpenAIEncoder)
+- Installed with: `pip install stratarouter[...]`

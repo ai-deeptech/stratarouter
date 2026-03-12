@@ -1,16 +1,17 @@
 ---
-name: Feature / Integration Request
-labels: ["enhancement"]
+name: Feature request
+about: Suggest an improvement or new capability
+labels: enhancement
 ---
-**What would you like**:
 
-**Why is it valuable**:
+**Is your feature request related to a problem?**
+A clear description of the problem.
 
-**Suggested API** (optional):
-```python
-```
+**Describe the solution you'd like**
+What you want to happen and roughly how you'd expect the API to look.
 
-**Can you contribute a PR?**
-- [ ] Yes, I can implement this
-- [ ] I can help review / test
-- [ ] I just need this — happy to discuss
+**Alternatives considered**
+Other approaches you've thought about.
+
+**Additional context**
+Any other context, links, or examples.

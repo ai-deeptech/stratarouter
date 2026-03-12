@@ -1,5 +1,4 @@
-"""
-# Contributing to StrataRouter Lite
+# Contributing to StrataRouter
 
 Thank you for your interest in contributing! 🎉
 
@@ -8,7 +7,7 @@ Thank you for your interest in contributing! 🎉
 1. Fork the repository
 2. Clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/stratarouter.git
+   git clone https://github.com/ai-deeptech/stratarouter.git
    cd stratarouter
    ```
 3. Create a branch:
@@ -47,18 +46,18 @@ cargo test
 
 ### Rust
 - Follow Rust style guide
-- Use rustfmt: `cargo fmt`
-- Use clippy: `cargo clippy -- -D warnings`
-- Document public APIs
+- Use `cargo fmt` before committing
+- Use `cargo clippy -- -D warnings` and fix all warnings
+- Document all public APIs with `///` doc comments
 
 ## Testing
 
 ```bash
 # All tests
-./scripts/test_all.sh
+make test
 
 # Python only
-pytest tests/ -v --cov=stratarouter
+cd python && pytest tests/ -v --cov=stratarouter
 
 # Rust only
 cd core && cargo test --release
@@ -67,31 +66,40 @@ cd core && cargo test --release
 ## Pull Request Process
 
 1. **Update documentation** for any changes
-2. **Add tests** for new features
-3. **Ensure all tests pass**
-4. **Update CHANGELOG.md**
-5. **Submit PR** with clear description
+2. **Add tests** for new features (Rust: `cargo test`, Python: `pytest`)
+3. **Ensure all tests pass** — CI must be green before review
+4. **Update CHANGELOG.md** under `[Unreleased]`
+5. **Submit PR** with a clear description referencing any related issues
 
-### PR Title Format
-- `feat: Add new feature`
-- `fix: Fix bug description`
-- `docs: Update documentation`
-- `test: Add tests`
-- `refactor: Refactor code`
+### PR Title Format (Conventional Commits)
+- `feat: Add Ollama encoder`
+- `fix: Cohere encoder lazy import`
+- `docs: Update quick-start example`
+- `test: Add RouteLayer batch routing tests`
+- `refactor: Rename IsotonicCalibrator → ScoreNormalizer`
 
 ## Code Review Checklist
 
-- [ ] Code follows style guidelines
-- [ ] Tests added and passing
-- [ ] Documentation updated
-- [ ] No breaking changes (or clearly documented)
-- [ ] CHANGELOG.md updated
-- [ ] Commit messages are clear
+- [ ] Code follows style guidelines (`cargo fmt`, `black`, `ruff`)
+- [ ] Tests added and passing (`cargo test`, `pytest`)
+- [ ] Documentation updated (doc comments + README if API changes)
+- [ ] No breaking changes, or clearly documented in CHANGELOG.md
+- [ ] Commit messages follow Conventional Commits format
+
+## Good First Issues
+
+Look for issues tagged [`good first issue`](https://github.com/ai-deeptech/stratarouter/issues?q=label%3A%22good+first+issue%22) — these are well-scoped tasks ideal for new contributors.
+
+Contributions we especially welcome:
+- New encoders: Cohere, Mistral, Gemini, Ollama
+- Framework integrations
+- Benchmark improvements
+- Documentation and examples
 
 ## Questions?
 
-- GitHub Issues: Bug reports and feature requests
-- Email: hello@inteleion.ai
+- GitHub Issues: bug reports and feature requests
+- Email: hello@stratarouter.dev
 
 ## License
 
@@ -100,4 +108,3 @@ By contributing, you agree that your contributions will be licensed under the MI
 ---
 
 Thank you for making StrataRouter better! 🚀
-"""
