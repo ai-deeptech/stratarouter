@@ -59,7 +59,16 @@ jobs:
         with:
           python-version: ${{ matrix.py }}
 
-      - name: Install dependencies
+      # Rust is required because pyproject.toml uses maturin as build backend.
+      # Without cargo on PATH, pip install -e ".[dev]" fails immediately.
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Install package + dev dependencies
         working-directory: python
         run: pip install -e ".[dev]"
 
@@ -97,8 +106,11 @@ jobs:
         working-directory: core
         run: cargo audit
 
+      # pip-audit uses bash process substitution — must set shell explicitly.
       - name: Python dependency audit (pip-audit)
         working-directory: python
+        shell: bash
         run: |
           pip install pip-audit --quiet
-          pip-audit --requirement <(pip freeze) || true
+          pip install -e ".[dev]" --quiet
+          pip-audit || true
