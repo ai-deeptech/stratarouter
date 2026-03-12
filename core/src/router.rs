@@ -108,7 +108,7 @@ impl Router {
         }
 
         if embeddings.len() != self.routes.len() {
-            return Err(Error::invalid_input(&format!(
+            return Err(Error::invalid_input(format!(
                 "Embedding count ({}) doesn't match route count ({})",
                 embeddings.len(),
                 self.routes.len()

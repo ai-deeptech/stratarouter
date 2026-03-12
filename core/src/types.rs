@@ -47,7 +47,7 @@ impl Route {
         
         if self.examples.is_empty() && self.description.is_empty() {
             return Err(crate::Error::invalid_input(
-                &format!("Route '{}' must have examples or description", self.id)
+            format!("Route '{}' must have examples or description", self.id)
             ));
         }
         
@@ -138,7 +138,7 @@ impl RouteScores {
         }
     }
     
-    /// Create zero scores
+    /// Create a scores struct with all fields set to zero.
     pub fn zero() -> Self {
         Self {
             semantic: 0.0,
