@@ -4,15 +4,16 @@ build-backend = "maturin"
 
 [project]
 name = "stratarouter"
-version = "0.1.0"
-description = "High-performance semantic routing - 10x faster than semantic-router"
+# Single source of truth for the version — do NOT duplicate in __version__.py
+version = "0.2.0"
+description = "High-performance semantic routing backed by a Rust core"
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 authors = [
-    { name = "StrataRouter Team", email = "team@stratarouter.dev" }
+    { name = "StrataRouter Contributors", email = "hello@stratarouter.dev" }
 ]
-keywords = ["routing", "semantic", "embeddings", "llm", "ai", "nlp"]
+keywords = ["routing", "semantic", "embeddings", "llm", "ai", "nlp", "rust"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -25,57 +26,83 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Rust",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 
+# Hard runtime dependencies only — everything else is optional
 dependencies = [
     "numpy>=1.21.0",
     "pydantic>=2.0.0",
 ]
 
 [project.optional-dependencies]
+# Encoder backends
+huggingface = ["sentence-transformers>=2.2.0"]
+openai      = ["openai>=1.0.0"]
+cohere      = ["cohere>=4.0.0"]
+
+# Integrations
+langchain = ["langchain-core>=0.1.0"]
+cloud     = ["httpx>=0.24.0"]
+
+# Install every optional dependency at once
+all = [
+    "sentence-transformers>=2.2.0",
+    "openai>=1.0.0",
+    "cohere>=4.0.0",
+    "langchain-core>=0.1.0",
+    "httpx>=0.24.0",
+]
+
+# Development tooling
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "black>=23.0.0",
     "ruff>=0.1.0",
     "mypy>=1.0.0",
-]
-
-openai = ["openai>=1.0.0"]
-cohere = ["cohere>=4.0.0"]
-huggingface = ["sentence-transformers>=2.2.0"]
-all = [
-    "openai>=1.0.0",
-    "cohere>=4.0.0",
-    "sentence-transformers>=2.2.0",
+    "numpy>=1.21.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/stratarouter/stratarouter"
-Documentation = "https://github.com/stratarouter/stratarouter/blob/main/README.md"
-Repository = "https://github.com/stratarouter/stratarouter"
-"Bug Tracker" = "https://github.com/stratarouter/stratarouter/issues"
+Homepage      = "https://github.com/ai-deeptech/stratarouter"
+Documentation = "https://github.com/ai-deeptech/stratarouter#readme"
+Repository    = "https://github.com/ai-deeptech/stratarouter"
+"Bug Tracker" = "https://github.com/ai-deeptech/stratarouter/issues"
+Changelog     = "https://github.com/ai-deeptech/stratarouter/blob/main/CHANGELOG.md"
 
 [tool.maturin]
 python-source = "python"
-module-name = "stratarouter._core"
-features = ["pyo3/extension-module"]
+module-name   = "stratarouter._core"
+features      = ["pyo3/extension-module"]
+
+# ── Linting & formatting ──────────────────────────────────────────────────────
 
 [tool.black]
-line-length = 100
-target-version = ['py38', 'py39', 'py310', 'py311']
+line-length    = 100
+target-version = ["py38", "py39", "py310", "py311", "py312"]
 
 [tool.ruff]
-line-length = 100
+line-length    = 100
 target-version = "py38"
 
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+ignore = ["E501"]  # line length handled by black
+
+# ── Type checking ─────────────────────────────────────────────────────────────
+
 [tool.mypy]
-python_version = "3.8"
-warn_return_any = true
+python_version   = "3.8"
+warn_return_any  = true
 warn_unused_configs = true
+ignore_missing_imports = true
+
+# ── Tests ─────────────────────────────────────────────────────────────────────
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths    = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+addopts = "-v --tb=short"
