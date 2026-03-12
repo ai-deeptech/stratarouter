@@ -67,8 +67,9 @@ pub use types::{Route, RouteResult, RouteScores};
 /// Crate version, taken from `Cargo.toml` at compile time.
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// Unix timestamp (seconds) of the current build.
-pub const BUILD_TIMESTAMP: &str = env!("BUILD_TIMESTAMP");
+/// Unix timestamp (seconds) of the current build, if set at build time.
+/// Falls back to `"unknown"` in environments without a build script.
+pub const BUILD_TIMESTAMP: Option<&str> = option_env!("BUILD_TIMESTAMP");
 
 /// Return `true` if the current CPU supports AVX2 instructions.
 ///
