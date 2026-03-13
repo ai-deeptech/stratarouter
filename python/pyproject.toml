@@ -72,7 +72,7 @@ Repository    = "https://github.com/ai-deeptech/stratarouter"
 Changelog     = "https://github.com/ai-deeptech/stratarouter/blob/main/CHANGELOG.md"
 
 [tool.maturin]
-python-source = "python"
+manifest-path = "../core/Cargo.toml"
 module-name   = "stratarouter._core"
 features      = ["pyo3/extension-module"]
 

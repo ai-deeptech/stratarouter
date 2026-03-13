@@ -8,9 +8,9 @@
 //! A graph-based HNSW index with O(log N) search complexity is planned for
 //! a future release and will be a drop-in replacement — see ROADMAP.md.
 
-use std::collections::HashMap;
 use crate::algorithms::vector_ops::cosine_similarity;
 use crate::error::{Error, Result};
+use std::collections::HashMap;
 
 /// A nearest-neighbour index backed by a linear scan over all stored vectors.
 ///
@@ -72,9 +72,7 @@ impl LinearIndex {
             })
             .collect();
 
-        results.sort_by(|a, b| {
-            a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal)
-        });
+        results.sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
         results.truncate(k);
         Ok(results)
     }

@@ -1,6 +1,6 @@
 //! Additional tests to improve coverage for lib.rs
 
-use stratarouter_core::{VERSION, BUILD_TIMESTAMP, has_avx2};
+use stratarouter_core::{has_avx2, BUILD_TIMESTAMP, VERSION};
 
 #[test]
 fn test_version_format() {
@@ -8,13 +8,14 @@ fn test_version_format() {
     assert!(VERSION.contains('.'));
     let parts: Vec<&str> = VERSION.split('.').collect();
     assert!(parts.len() >= 2, "Version should have at least major.minor");
-    
+
     // Verify each part is numeric
     for part in parts {
         let cleaned = part.split('-').next().unwrap();
         assert!(
             cleaned.chars().all(|c| c.is_ascii_digit()),
-            "Version part should be numeric: {}", cleaned
+            "Version part should be numeric: {}",
+            cleaned
         );
     }
 }
@@ -29,7 +30,7 @@ fn test_version_non_empty() {
 fn test_build_timestamp_format() {
     // Verify build timestamp exists and is non-empty
     assert!(!BUILD_TIMESTAMP.is_empty());
-    
+
     // Timestamp should contain date-like patterns
     assert!(
         BUILD_TIMESTAMP.contains(|c: char| c.is_ascii_digit()),
@@ -47,7 +48,7 @@ fn test_build_timestamp_non_empty() {
 fn test_avx2_detection() {
     // AVX2 detection should not panic
     let has_avx2_support = has_avx2();
-    
+
     // On x86_64 it might be true or false
     // On other architectures it should always be false
     #[cfg(not(target_arch = "x86_64"))]
@@ -66,14 +67,14 @@ fn test_avx2_consistency() {
 #[cfg(feature = "python")]
 fn test_python_module_attributes() {
     use pyo3::prelude::*;
-    
+
     Python::with_gil(|py| {
         let module_result = py.import("stratarouter_core");
         if let Ok(module) = module_result {
             // Verify module has required attributes
             assert!(module.hasattr("__version__").unwrap());
             assert!(module.hasattr("has_avx2").unwrap());
-            
+
             // Verify version matches
             if let Ok(py_version) = module.getattr("__version__") {
                 let version_str: String = py_version.extract().unwrap();

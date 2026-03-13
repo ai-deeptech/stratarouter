@@ -42,9 +42,7 @@ impl RouterConfig {
         }
 
         if !(0.0..=1.0).contains(&self.default_threshold) {
-            return Err(Error::invalid_input(
-                "Threshold must be between 0 and 1",
-            ));
+            return Err(Error::invalid_input("Threshold must be between 0 and 1"));
         }
 
         if self.top_k == 0 {
@@ -191,10 +189,13 @@ impl Router {
             let dense_score = (1.0 - distance).max(0.0);
             let sparse_score = self.hybrid_scorer.compute_sparse_score(text, route);
             let rule_score = self.hybrid_scorer.compute_rule_score(text, route);
-            let fused_score = self.hybrid_scorer.fuse_scores(dense_score, sparse_score, rule_score);
+            let fused_score = self
+                .hybrid_scorer
+                .fuse_scores(dense_score, sparse_score, rule_score);
 
             let (calibrated_score, _uncertainty) = if self.config.enable_calibration {
-                self.calibration_manager.calibrate_for_route(route_id, fused_score)
+                self.calibration_manager
+                    .calibrate_for_route(route_id, fused_score)
             } else {
                 (fused_score, 0.0)
             };
@@ -216,11 +217,12 @@ impl Router {
             return Err(Error::NoRoutes);
         }
 
-        let route = self.routes.get(&best_route_id).ok_or_else(|| {
-            Error::RouteNotFound {
+        let route = self
+            .routes
+            .get(&best_route_id)
+            .ok_or_else(|| Error::RouteNotFound {
                 route_id: best_route_id.clone(),
-            }
-        })?;
+            })?;
 
         let latency_us = start.elapsed().as_micros() as u64;
         let latency_ms = (latency_us as f64 / 1000.0).ceil() as u64;

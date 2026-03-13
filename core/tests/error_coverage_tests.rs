@@ -41,7 +41,7 @@ fn test_error_debug() {
         Error::IndexNotBuilt,
         Error::NoRoutes,
     ];
-    
+
     for error in errors {
         let debug = format!("{:?}", error);
         assert!(!debug.is_empty());
@@ -56,7 +56,7 @@ fn test_error_display_all_variants() {
         Error::IndexNotBuilt,
         Error::NoRoutes,
     ];
-    
+
     for error in errors {
         let display = format!("{}", error);
         assert!(!display.is_empty());
@@ -70,8 +70,9 @@ fn test_dimension_mismatch_message_format() {
     let message = error.to_string();
     assert!(message.contains("384"));
     assert!(message.contains("768"));
-    assert!(message.to_lowercase().contains("dimension") || 
-            message.to_lowercase().contains("mismatch"));
+    assert!(
+        message.to_lowercase().contains("dimension") || message.to_lowercase().contains("mismatch")
+    );
 }
 
 #[test]
@@ -89,25 +90,37 @@ fn test_error_is_recoverable() {
     assert!(Error::dimension_mismatch(10, 20).is_recoverable());
     assert!(Error::IndexNotBuilt.is_recoverable());
     assert!(Error::NoRoutes.is_recoverable());
-    
+
     // Non-recoverable errors
-    assert!(!Error::Unknown { message: "test".into() }.is_recoverable());
+    assert!(!Error::Unknown {
+        message: "test".into()
+    }
+    .is_recoverable());
 }
 
 #[test]
 fn test_error_severity() {
     use stratarouter_core::error::ErrorSeverity;
-    
+
     // Low severity
     assert_eq!(Error::invalid_input("test").severity(), ErrorSeverity::Low);
-    assert_eq!(Error::dimension_mismatch(10, 20).severity(), ErrorSeverity::Low);
-    
+    assert_eq!(
+        Error::dimension_mismatch(10, 20).severity(),
+        ErrorSeverity::Low
+    );
+
     // Medium severity
     assert_eq!(Error::IndexNotBuilt.severity(), ErrorSeverity::Medium);
     assert_eq!(Error::NoRoutes.severity(), ErrorSeverity::Medium);
-    
+
     // Critical severity
-    assert_eq!(Error::Unknown { message: "test".into() }.severity(), ErrorSeverity::Critical);
+    assert_eq!(
+        Error::Unknown {
+            message: "test".into()
+        }
+        .severity(),
+        ErrorSeverity::Critical
+    );
 }
 
 #[test]
@@ -115,10 +128,10 @@ fn test_error_from_io_error() {
     // Test conversion
     let io_error = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
     let error: Error = io_error.into();
-    
+
     // Should convert to IO variant
     match error {
-        Error::Io(_) => {}, // Success
+        Error::Io(_) => {} // Success
         _ => panic!("Expected Error::Io variant"),
     }
 }
@@ -126,15 +139,15 @@ fn test_error_from_io_error() {
 #[test]
 fn test_result_type_usage() {
     use stratarouter_core::Result;
-    
+
     fn returns_result() -> Result<i32> {
         Ok(42)
     }
-    
+
     fn returns_error() -> Result<i32> {
         Err(Error::NoRoutes)
     }
-    
+
     assert_eq!(returns_result().unwrap(), 42);
     assert!(returns_error().is_err());
 }
@@ -142,16 +155,16 @@ fn test_result_type_usage() {
 #[test]
 fn test_error_propagation() {
     use stratarouter_core::Result;
-    
+
     fn inner() -> Result<()> {
         Err(Error::IndexNotBuilt)
     }
-    
+
     fn outer() -> Result<()> {
         inner()?;
         Ok(())
     }
-    
+
     let result = outer();
     assert!(result.is_err());
     assert!(matches!(result.unwrap_err(), Error::IndexNotBuilt));
@@ -162,7 +175,7 @@ fn test_error_route_not_found() {
     let error = Error::RouteNotFound {
         route_id: "missing_route".into(),
     };
-    
+
     let display = error.to_string();
     assert!(display.contains("missing_route"));
 }
@@ -172,7 +185,7 @@ fn test_error_unknown() {
     let error = Error::Unknown {
         message: "unexpected error".into(),
     };
-    
+
     let display = error.to_string();
     assert!(display.contains("unexpected error"));
 }
@@ -180,7 +193,7 @@ fn test_error_unknown() {
 #[test]
 fn test_error_severity_ordering() {
     use stratarouter_core::error::ErrorSeverity;
-    
+
     assert!(ErrorSeverity::Low < ErrorSeverity::Medium);
     assert!(ErrorSeverity::Medium < ErrorSeverity::High);
     assert!(ErrorSeverity::High < ErrorSeverity::Critical);

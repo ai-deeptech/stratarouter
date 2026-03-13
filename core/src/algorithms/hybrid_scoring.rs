@@ -45,8 +45,7 @@ impl HybridScorer {
             let tf = words.iter().filter(|w| w.contains(&kw_lower)).count() as f32;
 
             if tf > 0.0 {
-                let norm = tf * (k1 + 1.0)
-                    / (tf + k1 * (1.0 - b + b * (doc_len / avg_len)));
+                let norm = tf * (k1 + 1.0) / (tf + k1 * (1.0 - b + b * (doc_len / avg_len)));
                 score += norm;
             }
         }
@@ -73,9 +72,8 @@ impl HybridScorer {
     /// Fuse the three component scores into a single value using learned
     /// weights, followed by sigmoid normalisation to `(0, 1)`.
     pub fn fuse_scores(&self, dense: f32, sparse: f32, rule: f32) -> f32 {
-        let base = self.dense_weight * dense
-            + self.sparse_weight * sparse
-            + self.rule_weight * rule;
+        let base =
+            self.dense_weight * dense + self.sparse_weight * sparse + self.rule_weight * rule;
         1.0 / (1.0 + (-base).exp())
     }
 }

@@ -24,9 +24,7 @@ impl PyRouter {
         }
 
         if !(0.0..=1.0).contains(&threshold) {
-            return Err(PyRuntimeError::new_err(
-                "Threshold must be between 0 and 1",
-            ));
+            return Err(PyRuntimeError::new_err("Threshold must be between 0 and 1"));
         }
 
         let config = RouterConfig {

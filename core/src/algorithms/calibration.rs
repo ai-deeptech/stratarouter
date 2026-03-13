@@ -81,10 +81,7 @@ impl CalibrationManager {
     /// A per-route normaliser is lazily initialised with default settings on
     /// first access.
     pub fn calibrate_for_route(&mut self, route_id: &str, raw_score: f32) -> (f32, f32) {
-        let normalizer = self
-            .normalizers
-            .entry(route_id.to_string())
-            .or_default();
+        let normalizer = self.normalizers.entry(route_id.to_string()).or_default();
         normalizer.calibrate(raw_score)
     }
 }
@@ -129,6 +126,9 @@ mod tests {
         let mut m = CalibrationManager::new();
         let (s1, _) = m.calibrate_for_route("route_a", 0.5);
         let (s2, _) = m.calibrate_for_route("route_b", 0.5);
-        assert!((s1 - s2).abs() < 0.01, "Default normaliser should be identical for all routes");
+        assert!(
+            (s1 - s2).abs() < 0.01,
+            "Default normaliser should be identical for all routes"
+        );
     }
 }
