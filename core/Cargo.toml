@@ -52,7 +52,7 @@ once_cell = "1.19"
 criterion = { version = "0.5", features = ["html_reports"] }
 proptest  = "1.4"
 approx    = "0.5"
-tempfile  = "3.8"
+tempfile  = "3.27"
 
 # ── Features ──────────────────────────────────────────────────────────────────
 
