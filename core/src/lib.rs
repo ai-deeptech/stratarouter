@@ -111,7 +111,7 @@ use pyo3::prelude::*;
 
 #[cfg(feature = "python")]
 #[pymodule]
-fn _core(_py: Python, m: &PyModule) -> PyResult<()> {
+fn _core(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<ffi::PyRouter>()?;
     m.add_class::<ffi::PyRoute>()?;
     m.add("__version__", VERSION)?;

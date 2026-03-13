@@ -118,7 +118,7 @@ fn benchmark_sparse_scoring(c: &mut Criterion) {
 }
 
 fn benchmark_cosine_similarity(c: &mut Criterion) {
-    use stratarouter_core::algorithms::simd_ops::cosine_similarity;
+    use stratarouter_core::algorithms::vector_ops::cosine_similarity;
 
     let a_vec: Vec<f32> = (0..384).map(|i| (i as f32 * 0.01).sin()).collect();
     let b_vec: Vec<f32> = (0..384).map(|i| (i as f32 * 0.01).cos()).collect();

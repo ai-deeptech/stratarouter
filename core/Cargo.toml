@@ -81,8 +81,16 @@ inherits = "release"
 name    = "routing_benchmark"
 harness = false
 
+[[bench]]
+name    = "benchmark"
+harness = false
+
+[[bench]]
+name    = "similarity"
+harness = false
+
 # ── Maturin ───────────────────────────────────────────────────────────────────
 
 [package.metadata.maturin]
 strip       = true
-module-name = "stratarouter_core"
+module-name = "stratarouter._core"

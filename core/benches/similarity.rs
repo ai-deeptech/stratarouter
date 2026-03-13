@@ -1,5 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use stratarouter_core::similarity::cosine_similarity_inner;
+use stratarouter_core::algorithms::vector_ops::cosine_similarity as cosine_similarity_inner;
 
 fn bench_cosine_similarity(c: &mut Criterion) {
     let mut group = c.benchmark_group("cosine_similarity");
