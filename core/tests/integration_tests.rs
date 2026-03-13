@@ -50,8 +50,8 @@ fn test_end_to_end_routing() {
     let result = router.route("I need my invoice", &query_embedding).unwrap();
 
     assert_eq!(result.route_id, "billing");
-    assert!(result.scores.confidence > 0);
-    assert!(result.scores.confidence <= 1);
+    assert!(result.scores.confidence > 0.0);
+    assert!(result.scores.confidence <= 1.0);
     assert!(result.latency_ms > 0);
 }
 
