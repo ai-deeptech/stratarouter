@@ -1,3 +1,6 @@
+REPO=/home/opc/backup/new/stratarouter
+
+cat > $REPO/python/stratarouter/core.py << 'PYEOF'
 """
 Bridge to Rust core functionality.
 
@@ -168,3 +171,17 @@ __all__ = [
     "cosine_similarity",
     "cosine_similarity_batch",
 ]
+PYEOF
+
+# Verify ruff is happy
+cd $REPO/python && ruff check stratarouter/core.py
+echo "Ruff core.py: $?"
+
+# Commit and push
+cd $REPO
+git add -A
+git commit \
+  --author="natarajanchandra02-afk <natarajanchandra02@users.noreply.github.com>" \
+  -m "fix: rewrite core.py with pure-Python Router/RustRoute/RouteMatch/cosine_similarity"
+git push origin fix/oss-review
+echo "PUSHED"
