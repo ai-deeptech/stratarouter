@@ -1,8 +1,8 @@
 //! Complete Unit Tests for StrataRouter Core
 //! Covers all components with 100% coverage
 
-use stratarouter_core::*;
 use std::collections::HashMap;
+use stratarouter_core::*;
 
 // ============================================================================
 // Route Tests
@@ -182,14 +182,19 @@ fn test_router_config_max_top_k() {
 
 #[test]
 fn test_error_invalid_input() {
-    let err = Error::InvalidInput { message: "test error".into() };
+    let err = Error::InvalidInput {
+        message: "test error".into(),
+    };
     assert!(err.is_recoverable());
     assert!(format!("{}", err).contains("test error"));
 }
 
 #[test]
 fn test_error_dimension_mismatch() {
-    let err = Error::DimensionMismatch { expected: 384, actual: 256 };
+    let err = Error::DimensionMismatch {
+        expected: 384,
+        actual: 256,
+    };
     assert!(err.is_recoverable());
     let msg = format!("{}", err);
     assert!(msg.contains("384"));
@@ -212,14 +217,18 @@ fn test_error_no_routes() {
 
 #[test]
 fn test_error_route_not_found() {
-    let err = Error::RouteNotFound { route_id: "test".into() };
+    let err = Error::RouteNotFound {
+        route_id: "test".into(),
+    };
     assert!(err.is_recoverable());
     assert!(format!("{}", err).contains("test"));
 }
 
 #[test]
 fn test_error_debug_format() {
-    let err = Error::InvalidInput { message: "test".into() };
+    let err = Error::InvalidInput {
+        message: "test".into(),
+    };
     let debug = format!("{:?}", err);
     assert!(debug.contains("InvalidInput"));
 }
@@ -254,8 +263,14 @@ fn test_route_scores_creation() {
 
 #[test]
 fn test_route_scores_ordering() {
-    let scores1 = RouteScores { total: 0.8, ..RouteScores::zero() };
-    let scores2 = RouteScores { total: 0.6, ..RouteScores::zero() };
+    let scores1 = RouteScores {
+        total: 0.8,
+        ..RouteScores::zero()
+    };
+    let scores2 = RouteScores {
+        total: 0.6,
+        ..RouteScores::zero()
+    };
     assert!(scores1.total > scores2.total);
 }
 
@@ -302,7 +317,7 @@ fn test_router_creation() {
 fn test_router_add_route() {
     let config = RouterConfig::default();
     let mut router = Router::new(config);
-    
+
     let route = Route {
         id: "test".into(),
         description: "Test route".into(),
@@ -313,7 +328,7 @@ fn test_router_add_route() {
         threshold: None,
         tags: vec![],
     };
-    
+
     assert!(router.add_route(route).is_ok());
     assert_eq!(router.route_count(), 1);
 }
@@ -322,7 +337,7 @@ fn test_router_add_route() {
 fn test_router_add_invalid_route() {
     let config = RouterConfig::default();
     let mut router = Router::new(config);
-    
+
     let route = Route {
         id: "test".into(),
         description: "".into(),
@@ -333,7 +348,7 @@ fn test_router_add_invalid_route() {
         threshold: None,
         tags: vec![],
     };
-    
+
     assert!(router.add_route(route).is_err());
 }
 
@@ -341,7 +356,7 @@ fn test_router_add_invalid_route() {
 fn test_router_duplicate_route() {
     let config = RouterConfig::default();
     let mut router = Router::new(config);
-    
+
     let route1 = Route {
         id: "test".into(),
         description: "Test 1".into(),
@@ -352,7 +367,7 @@ fn test_router_duplicate_route() {
         threshold: None,
         tags: vec![],
     };
-    
+
     let route2 = Route {
         id: "test".into(),
         description: "Test 2".into(),
@@ -363,7 +378,7 @@ fn test_router_duplicate_route() {
         threshold: None,
         tags: vec![],
     };
-    
+
     assert!(router.add_route(route1).is_ok());
     assert!(router.add_route(route2).is_ok()); // Should replace
     assert_eq!(router.route_count(), 1);
@@ -373,7 +388,7 @@ fn test_router_duplicate_route() {
 fn test_router_multiple_routes() {
     let config = RouterConfig::default();
     let mut router = Router::new(config);
-    
+
     for i in 0..10 {
         let route = Route {
             id: format!("route_{}", i),
@@ -387,7 +402,7 @@ fn test_router_multiple_routes() {
         };
         assert!(router.add_route(route).is_ok());
     }
-    
+
     assert_eq!(router.route_count(), 10);
 }
 
@@ -402,7 +417,7 @@ fn test_hnsw_small_dataset() {
         ..Default::default()
     };
     let mut router = Router::new(config);
-    
+
     let route = Route {
         id: "test".into(),
         description: "Test".into(),
@@ -414,7 +429,7 @@ fn test_hnsw_small_dataset() {
         tags: vec![],
     };
     router.add_route(route).unwrap();
-    
+
     let embeddings = vec![vec![0.5; 384]];
     assert!(router.build_index(embeddings).is_ok());
 }
@@ -427,7 +442,7 @@ fn test_hnsw_large_dataset() {
         ..Default::default()
     };
     let mut router = Router::new(config);
-    
+
     for i in 0..1000 {
         let route = Route {
             id: format!("route_{}", i),
@@ -441,11 +456,9 @@ fn test_hnsw_large_dataset() {
         };
         router.add_route(route).unwrap();
     }
-    
-    let embeddings: Vec<Vec<f32>> = (0..1000)
-        .map(|_| vec![0.5; 384])
-        .collect();
-    
+
+    let embeddings: Vec<Vec<f32>> = (0..1000).map(|_| vec![0.5; 384]).collect();
+
     assert!(router.build_index(embeddings).is_ok());
 }
 
@@ -457,7 +470,7 @@ fn test_hnsw_large_dataset() {
 fn test_bm25_exact_keyword_match() {
     let config = RouterConfig::default();
     let mut router = Router::new(config);
-    
+
     let route = Route {
         id: "test".into(),
         description: "Test description".into(),
@@ -469,10 +482,10 @@ fn test_bm25_exact_keyword_match() {
         tags: vec![],
     };
     router.add_route(route).unwrap();
-    
+
     let embeddings = vec![vec![0.5; 384]];
     router.build_index(embeddings).unwrap();
-    
+
     let result = router.route("I need my invoice", &vec![0.5; 384]).unwrap();
     assert!(result.scores.keyword > 0.0);
 }
@@ -481,7 +494,7 @@ fn test_bm25_exact_keyword_match() {
 fn test_bm25_no_keyword_match() {
     let config = RouterConfig::default();
     let mut router = Router::new(config);
-    
+
     let route = Route {
         id: "test".into(),
         description: "Test description".into(),
@@ -493,11 +506,13 @@ fn test_bm25_no_keyword_match() {
         tags: vec![],
     };
     router.add_route(route).unwrap();
-    
+
     let embeddings = vec![vec![0.5; 384]];
     router.build_index(embeddings).unwrap();
-    
-    let result = router.route("completely different query", &vec![0.5; 384]).unwrap();
+
+    let result = router
+        .route("completely different query", &vec![0.5; 384])
+        .unwrap();
     assert_eq!(result.scores.keyword, 0.0);
 }
 
@@ -509,7 +524,7 @@ fn test_bm25_no_keyword_match() {
 fn test_pattern_exact_match() {
     let config = RouterConfig::default();
     let mut router = Router::new(config);
-    
+
     let route = Route {
         id: "test".into(),
         description: "Test".into(),
@@ -521,11 +536,13 @@ fn test_pattern_exact_match() {
         tags: vec![],
     };
     router.add_route(route).unwrap();
-    
+
     let embeddings = vec![vec![0.5; 384]];
     router.build_index(embeddings).unwrap();
-    
-    let result = router.route("I need to reset password", &vec![0.5; 384]).unwrap();
+
+    let result = router
+        .route("I need to reset password", &vec![0.5; 384])
+        .unwrap();
     assert!(result.scores.pattern > 0.0);
 }
 
@@ -533,7 +550,7 @@ fn test_pattern_exact_match() {
 fn test_pattern_no_match() {
     let config = RouterConfig::default();
     let mut router = Router::new(config);
-    
+
     let route = Route {
         id: "test".into(),
         description: "Test".into(),
@@ -545,10 +562,10 @@ fn test_pattern_no_match() {
         tags: vec![],
     };
     router.add_route(route).unwrap();
-    
+
     let embeddings = vec![vec![0.5; 384]];
     router.build_index(embeddings).unwrap();
-    
+
     let result = router.route("different query", &vec![0.5; 384]).unwrap();
     assert!(result.scores.pattern == 0.0 || result.scores.pattern > 0.0); // May or may not match
 }
@@ -561,7 +578,7 @@ fn test_pattern_no_match() {
 fn test_empty_query() {
     let config = RouterConfig::default();
     let mut router = Router::new(config);
-    
+
     let route = Route {
         id: "test".into(),
         description: "Test".into(),
@@ -573,10 +590,10 @@ fn test_empty_query() {
         tags: vec![],
     };
     router.add_route(route).unwrap();
-    
+
     let embeddings = vec![vec![0.5; 384]];
     router.build_index(embeddings).unwrap();
-    
+
     let result = router.route("", &vec![0.5; 384]);
     assert!(result.is_err());
 }
@@ -585,7 +602,7 @@ fn test_empty_query() {
 fn test_empty_embedding() {
     let config = RouterConfig::default();
     let mut router = Router::new(config);
-    
+
     let route = Route {
         id: "test".into(),
         description: "Test".into(),
@@ -597,10 +614,10 @@ fn test_empty_embedding() {
         tags: vec![],
     };
     router.add_route(route).unwrap();
-    
+
     let embeddings = vec![vec![0.5; 384]];
     router.build_index(embeddings).unwrap();
-    
+
     let result = router.route("test", &vec![]);
     assert!(result.is_err());
 }
@@ -612,7 +629,7 @@ fn test_wrong_dimension_embedding() {
         ..Default::default()
     };
     let mut router = Router::new(config);
-    
+
     let route = Route {
         id: "test".into(),
         description: "Test".into(),
@@ -624,10 +641,10 @@ fn test_wrong_dimension_embedding() {
         tags: vec![],
     };
     router.add_route(route).unwrap();
-    
+
     let embeddings = vec![vec![0.5; 384]];
     router.build_index(embeddings).unwrap();
-    
+
     let result = router.route("test", &vec![0.5; 256]);
     assert!(result.is_err());
 }
@@ -636,7 +653,7 @@ fn test_wrong_dimension_embedding() {
 fn test_extreme_confidence_values() {
     let config = RouterConfig::default();
     let mut router = Router::new(config);
-    
+
     let route = Route {
         id: "test".into(),
         description: "Test".into(),
@@ -648,10 +665,10 @@ fn test_extreme_confidence_values() {
         tags: vec![],
     };
     router.add_route(route).unwrap();
-    
+
     let embeddings = vec![vec![0.5; 384]];
     router.build_index(embeddings).unwrap();
-    
+
     let result = router.route("test", &vec![0.5; 384]).unwrap();
     assert!(result.scores.confidence >= 0.0);
     assert!(result.scores.confidence <= 1.0);
@@ -661,7 +678,7 @@ fn test_extreme_confidence_values() {
 fn test_unicode_text() {
     let config = RouterConfig::default();
     let mut router = Router::new(config);
-    
+
     let route = Route {
         id: "test".into(),
         description: "Test".into(),
@@ -673,10 +690,10 @@ fn test_unicode_text() {
         tags: vec![],
     };
     router.add_route(route).unwrap();
-    
+
     let embeddings = vec![vec![0.5; 384]];
     router.build_index(embeddings).unwrap();
-    
+
     let result = router.route("日本語のテスト", &vec![0.5; 384]);
     assert!(result.is_ok());
 }
@@ -685,7 +702,7 @@ fn test_unicode_text() {
 fn test_very_long_text() {
     let config = RouterConfig::default();
     let mut router = Router::new(config);
-    
+
     let route = Route {
         id: "test".into(),
         description: "Test".into(),
@@ -697,10 +714,10 @@ fn test_very_long_text() {
         tags: vec![],
     };
     router.add_route(route).unwrap();
-    
+
     let embeddings = vec![vec![0.5; 384]];
     router.build_index(embeddings).unwrap();
-    
+
     let long_text = "word ".repeat(10000);
     let result = router.route(&long_text, &vec![0.5; 384]);
     assert!(result.is_ok());

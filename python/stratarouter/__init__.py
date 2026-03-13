@@ -1,18 +1,32 @@
-"""StrataRouter - High-performance semantic routing"""
+"""StrataRouter — high-performance semantic routing.
 
-try:
-    # Try importing from the Rust extension module
-    from stratarouter_core.stratarouter_core import PyRouter, PyRoute
-    
-    # Re-export with cleaner names
-    Router = PyRouter
-    Route = PyRoute
-    
-except ImportError:
-    # Fallback for development
-    from stratarouter_core import PyRouter, PyRoute
-    Router = PyRouter
-    Route = PyRoute
+Public API
+----------
+Route
+    Define a named route with example utterances.
+RouteChoice
+    Result of a routing operation (name, score, threshold).
+RouteLayer
+    High-level router compatible with the semantic-router API.
+    Recommended entry point for most users.
+Router
+    Lower-level router; useful when you need fine-grained control over
+    the Rust core or cloud deployment mode.
+"""
 
-__version__ = "0.2.0"
-__all__ = ["Router", "Route"]
+from .__version__ import __version__
+from .layer import RouteLayer
+from .route import Route, RouteChoice
+from .router import DeploymentMode, Router
+
+__all__ = [
+    "__version__",
+    # Data classes
+    "Route",
+    "RouteChoice",
+    # High-level API
+    "RouteLayer",
+    # Low-level / advanced API
+    "Router",
+    "DeploymentMode",
+]

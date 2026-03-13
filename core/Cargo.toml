@@ -2,100 +2,95 @@
 name = "stratarouter-core"
 version = "0.2.0"
 edition = "2021"
-authors = ["InteleionAI <hello@inteleion.ai>"]
+authors = ["StrataRouter Contributors <hello@stratarouter.dev>"]
 license = "MIT"
 description = "High-performance semantic routing engine"
-repository = "https://github.com/InteleionAI/stratarouter"
+repository = "https://github.com/ai-deeptech/stratarouter"
+homepage = "https://github.com/ai-deeptech/stratarouter"
 readme = "README.md"
-keywords = ["routing", "nlp", "ai", "semantic"]
+keywords = ["routing", "nlp", "ai", "semantic", "embeddings"]
 categories = ["algorithms", "science"]
-publish = false
 rust-version = "1.70"
+# Set to true once the API is stable and you are ready to publish to crates.io
+publish = false
 
 [lib]
 name = "stratarouter_core"
 crate-type = ["cdylib", "rlib"]
 
-# -----------------------
-# Dependencies
-# -----------------------
+# ── Dependencies ──────────────────────────────────────────────────────────────
 
 [dependencies]
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-thiserror = "1.0"
-anyhow = "1.0"
+serde        = { version = "1.0", features = ["derive"] }
+serde_json   = "1.0"
+thiserror    = "1.0"
+anyhow       = "1.0"
 
-# Python bindings (optional for maturin)
-pyo3 = { version = "0.20", features = ["extension-module", "abi3-py38"], optional = true }
-numpy = { version = "0.20", optional = true }
-
-# Math & algorithms
-ndarray = "0.15"
-nalgebra = "0.32"
-wide = "0.7"
+# Python bindings (only compiled with --features python / maturin)
+pyo3   = { version = "0.20", features = ["extension-module", "abi3-py38"], optional = true }
+numpy  = { version = "0.20", optional = true }
 
 # Collections & hashing
-ahash = "0.8"
+ahash      = "0.8"
 rustc-hash = "1.1"
+lru        = "0.12"
 
 # Concurrency
-rayon = "1.8"
+rayon       = "1.8"
 parking_lot = "0.12"
 
 # Serialization
 bincode = "1.3"
 
 # Text processing
-regex = "1.10"
+regex    = "1.10"
 once_cell = "1.19"
 
-# -----------------------
-# Dev / Bench
-# -----------------------
+# ── Dev / Bench ───────────────────────────────────────────────────────────────
 
 [dev-dependencies]
 criterion = { version = "0.5", features = ["html_reports"] }
-proptest = "1.4"
-approx = "0.5"
-tempfile = "3.8"
+proptest  = "1.4"
+approx    = "0.5"
+tempfile  = "3.8"
 
-# -----------------------
-# Features
-# -----------------------
+# ── Features ──────────────────────────────────────────────────────────────────
 
 [features]
-default = []  # Don't enable Python by default for tests
-python = ["pyo3", "numpy"]
+default    = []                    # No Python by default (keeps pure-Rust tests fast)
+python     = ["pyo3", "numpy"]
 production = []
 
-# -----------------------
-# Build Profiles
-# -----------------------
+# ── Build profiles ────────────────────────────────────────────────────────────
 
 [profile.release]
-opt-level = 3
-lto = "fat"
-codegen-units = 1
-strip = "symbols"
-panic = "abort"
-overflow-checks = false
-debug = false
-rpath = false
-incremental = false
+opt-level      = 3
+lto            = "fat"
+codegen-units  = 1
+strip          = "symbols"
+panic          = "abort"
+debug          = false
+rpath          = false
+incremental    = false
+# overflow-checks intentionally left at the default (true) for safety.
 
 [profile.bench]
 inherits = "release"
 
 [[bench]]
-name = "routing_benchmark"
+name    = "routing_benchmark"
 harness = false
 
-# -----------------------
-# Maturin Configuration
-# -----------------------
+[[bench]]
+name    = "benchmark"
+harness = false
+
+[[bench]]
+name    = "similarity"
+harness = false
+
+# ── Maturin ───────────────────────────────────────────────────────────────────
 
 [package.metadata.maturin]
-strip = true
-module-name = "stratarouter_core"
-
+strip       = true
+module-name = "stratarouter._core"

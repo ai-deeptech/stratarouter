@@ -1,3 +1,12 @@
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════════════════
+# COMPLETE FIX SCRIPT  —  paste entire block on ole9
+# ═══════════════════════════════════════════════════════════════════
+set -e
+REPO=/home/opc/backup/new/stratarouter
+
+# ── 1. Write core.py correctly (ruff-clean from the start) ────────
+cat > $REPO/python/stratarouter/core.py << 'PYEOF'
 """
 Bridge to Rust core functionality.
 
@@ -10,6 +19,7 @@ from __future__ import annotations
 
 import math
 from typing import Any
+
 
 # ── Try to load compiled Rust extension (optional) ────────────────
 try:
@@ -168,3 +178,59 @@ __all__ = [
     "cosine_similarity",
     "cosine_similarity_batch",
 ]
+PYEOF
+
+echo "core.py written"
+
+# ── 2. Run ruff --fix on everything ───────────────────────────────
+cd $REPO/python
+pip install ruff --break-system-packages -q
+ruff check stratarouter/ --fix --unsafe-fixes 2>&1 || true
+
+# ── 3. Verify ruff is clean ───────────────────────────────────────
+echo ""
+echo "=== ruff check ==="
+ruff check stratarouter/
+RUFF=$?
+echo "Ruff exit: $RUFF"
+
+# ── 4. cargo fmt ──────────────────────────────────────────────────
+echo ""
+echo "=== cargo fmt ==="
+cd $REPO/core
+rustup component add rustfmt 2>/dev/null || true
+cargo fmt
+cargo fmt --check
+FMT=$?
+echo "Fmt exit: $FMT"
+
+# ── 5. cargo clippy ───────────────────────────────────────────────
+echo ""
+echo "=== cargo clippy ==="
+cargo clippy -- -D warnings 2>&1 | tail -30
+CLIPPY=$?
+echo "Clippy exit: $CLIPPY"
+
+# ── 6. Commit only when all 3 pass ────────────────────────────────
+echo ""
+echo "Summary — Ruff:$RUFF  Fmt:$FMT  Clippy:$CLIPPY"
+
+if [ "$RUFF" = "0" ] && [ "$FMT" = "0" ] && [ "$CLIPPY" = "0" ]; then
+  cd $REPO
+  git add -A
+  git commit \
+    --author="natarajanchandra02-afk <natarajanchandra02@users.noreply.github.com>" \
+    -m "fix: clean core.py rewrite, ruff/fmt/clippy all pass"
+  git push origin fix/oss-review
+  echo "=== PUSHED — CI should pass ==="
+else
+  echo "=== NOT PUSHED — remaining errors above ==="
+  if [ "$RUFF" != "0" ]; then
+    echo "--- ruff ---"
+    cd $REPO/python && ruff check stratarouter/
+  fi
+  if [ "$CLIPPY" != "0" ]; then
+    echo "--- clippy ---"
+    cd $REPO/core && cargo clippy -- -D warnings 2>&1 | grep "^error"
+  fi
+fi

@@ -1,0 +1,33 @@
+version: 2
+updates:
+  # Python dependencies (pyproject.toml)
+  - package-ecosystem: pip
+    directory: /python
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - python
+
+  # Rust dependencies (Cargo.toml)
+  - package-ecosystem: cargo
+    directory: /core
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - rust
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - ci

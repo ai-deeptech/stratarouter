@@ -52,6 +52,19 @@ PyPI-Recovery-Codes-*
 agentdyne_codes.txt
 agentdyne_full_export.sql
 
+# ── Development artefacts ────────────────────────────────────────────────────
+backup_setup.py
+# Root-level throwaway scripts and scratch files (never in OSS repo)
+py2.py
+v1.py
+test.py
+sample.sh
+test2.sh
+# Virtual-environment artefacts
+pyvenv.cfg
+lib64
+.python-version
+
 # ── Private scripts (never in OSS repo) ──────────────────────────────────────
 capture_claude.sh
 fix_auth_and_push.sh

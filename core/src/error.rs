@@ -14,7 +14,7 @@ pub enum Error {
         /// Route ID that was not found
         route_id: String,
     },
-    
+
     /// Dimension mismatch between embedding and configuration
     #[error("Dimension mismatch: expected {expected}, got {actual}")]
     DimensionMismatch {
@@ -23,30 +23,30 @@ pub enum Error {
         /// Actual dimension received
         actual: usize,
     },
-    
+
     /// Index not built before routing
     #[error("Index not built. Call build_index() before routing")]
     IndexNotBuilt,
-    
+
     /// Invalid input provided
     #[error("Invalid input: {message}")]
     InvalidInput {
         /// Error message
         message: String,
     },
-    
+
     /// IO error occurred
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
-    
+
     /// Serialization error
     #[error("Serialization error: {0}")]
     Serialization(#[from] serde_json::Error),
-    
+
     /// No routes available
     #[error("No routes available in router")]
     NoRoutes,
-    
+
     /// Unknown error
     #[error("Unknown error: {message}")]
     Unknown {
@@ -71,7 +71,7 @@ impl Error {
                 | Self::DimensionMismatch { .. }
         )
     }
-    
+
     /// Get error severity
     #[must_use]
     pub fn severity(&self) -> ErrorSeverity {
@@ -80,11 +80,11 @@ impl Error {
             Self::Serialization(_) => ErrorSeverity::High,
             Self::IndexNotBuilt | Self::NoRoutes => ErrorSeverity::Medium,
             Self::InvalidInput { .. }
-                | Self::RouteNotFound { .. }
-                | Self::DimensionMismatch { .. } => ErrorSeverity::Low,
+            | Self::RouteNotFound { .. }
+            | Self::DimensionMismatch { .. } => ErrorSeverity::Low,
         }
     }
-    
+
     /// Create InvalidInput error
     #[must_use]
     pub fn invalid_input(message: impl Into<String>) -> Self {
@@ -92,14 +92,11 @@ impl Error {
             message: message.into(),
         }
     }
-    
+
     /// Create DimensionMismatch error
     #[must_use]
     pub fn dimension_mismatch(expected: usize, actual: usize) -> Self {
-        Self::DimensionMismatch {
-            expected,
-            actual,
-        }
+        Self::DimensionMismatch { expected, actual }
     }
 }
 
@@ -119,31 +116,35 @@ pub enum ErrorSeverity {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_error_recoverable() {
         let err = Error::invalid_input("test");
         assert!(err.is_recoverable());
-        
+
         let err = Error::dimension_mismatch(384, 256);
         assert!(err.is_recoverable());
-        
-        let err = Error::Unknown { message: "test".into() };
+
+        let err = Error::Unknown {
+            message: "test".into(),
+        };
         assert!(!err.is_recoverable());
     }
-    
+
     #[test]
     fn test_error_severity() {
         let err = Error::invalid_input("test");
         assert_eq!(err.severity(), ErrorSeverity::Low);
-        
+
         let err = Error::dimension_mismatch(384, 256);
         assert_eq!(err.severity(), ErrorSeverity::Low);
-        
-        let err = Error::Unknown { message: "test".into() };
+
+        let err = Error::Unknown {
+            message: "test".into(),
+        };
         assert_eq!(err.severity(), ErrorSeverity::Critical);
     }
-    
+
     #[test]
     fn test_error_display() {
         let err = Error::dimension_mismatch(384, 256);

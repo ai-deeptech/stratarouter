@@ -1,6 +1,6 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use stratarouter_core::{Router, RouterConfig, Route};
+use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::collections::HashMap;
+use stratarouter_core::{Route, Router, RouterConfig};
 
 fn create_router(num_routes: usize, dimension: usize) -> Router {
     let config = RouterConfig {
@@ -43,19 +43,16 @@ fn benchmark_routing(c: &mut Criterion) {
 
     for num_routes in [10, 50, 100, 500].iter() {
         let mut router = create_router(*num_routes, 384);
-        let query_embedding: Vec<f32> = (0..384)
-            .map(|i| (i as f32 * 0.01).cos())
-            .collect();
+        let query_embedding: Vec<f32> = (0..384).map(|i| (i as f32 * 0.01).cos()).collect();
 
         group.bench_with_input(
             BenchmarkId::from_parameter(num_routes),
             num_routes,
             |bencher, _| {
                 bencher.iter(|| {
-                    router.route(
-                        black_box("test query"),
-                        black_box(&query_embedding)
-                    ).unwrap()
+                    router
+                        .route(black_box("test query"), black_box(&query_embedding))
+                        .unwrap()
                 })
             },
         );
@@ -114,25 +111,20 @@ fn benchmark_sparse_scoring(c: &mut Criterion) {
         bencher.iter(|| {
             scorer.compute_sparse_score(
                 black_box("I need my invoice for the payment"),
-                black_box(&route)
+                black_box(&route),
             )
         })
     });
 }
 
 fn benchmark_cosine_similarity(c: &mut Criterion) {
-    use stratarouter_core::algorithms::simd_ops::cosine_similarity;
+    use stratarouter_core::algorithms::vector_ops::cosine_similarity;
 
     let a_vec: Vec<f32> = (0..384).map(|i| (i as f32 * 0.01).sin()).collect();
     let b_vec: Vec<f32> = (0..384).map(|i| (i as f32 * 0.01).cos()).collect();
 
     c.bench_function("cosine_similarity", |bencher| {
-        bencher.iter(|| {
-            cosine_similarity(
-                black_box(a_vec.as_slice()),
-                black_box(b_vec.as_slice())
-            )
-        })
+        bencher.iter(|| cosine_similarity(black_box(a_vec.as_slice()), black_box(b_vec.as_slice())))
     });
 }
 
@@ -144,4 +136,3 @@ criterion_group!(
     benchmark_cosine_similarity
 );
 criterion_main!(benches);
-

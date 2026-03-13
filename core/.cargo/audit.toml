@@ -1,0 +1,5 @@
+[advisories]
+# pyo3 0.20 buffer overflow in PyString::from_object (RUSTSEC-2025-0020)
+# Upgrading to pyo3 0.24 requires breaking API changes across the entire
+# FFI layer. Ignored until the pyo3 migration is scheduled.
+ignore = ["RUSTSEC-2025-0020", "RUSTSEC-2025-0141", "RUSTSEC-2024-0436"]

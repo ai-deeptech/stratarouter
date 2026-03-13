@@ -4,7 +4,7 @@ use stratarouter_core::*;
 fn test_route_validation() {
     let mut route = Route::new("test");
     assert!(route.validate().is_err()); // No examples/description
-    
+
     route.examples.push("test".into());
     assert!(route.validate().is_ok());
 }
@@ -26,19 +26,19 @@ fn test_route_id_empty() {
 fn test_router_config_validation() {
     let config = RouterConfig::default();
     assert!(config.validate().is_ok());
-    
+
     let invalid = RouterConfig {
         dimension: 0,
         ..Default::default()
     };
     assert!(invalid.validate().is_err());
-    
+
     let invalid_threshold = RouterConfig {
         default_threshold: 1.5,
         ..Default::default()
     };
     assert!(invalid_threshold.validate().is_err());
-    
+
     let invalid_top_k = RouterConfig {
         top_k: 0,
         ..Default::default()
@@ -48,12 +48,14 @@ fn test_router_config_validation() {
 
 #[test]
 fn test_error_types() {
-    let err = Error::InvalidInput { message: "test".into() };
+    let err = Error::InvalidInput {
+        message: "test".into(),
+    };
     assert!(err.is_recoverable());
-    
+
     let err = Error::IndexNotBuilt;
     assert!(err.is_recoverable());
-    
+
     let err = Error::NoRoutes;
     assert!(err.is_recoverable());
 }
@@ -70,7 +72,10 @@ fn test_route_scores() {
 
 #[test]
 fn test_error_display() {
-    let err = Error::DimensionMismatch { expected: 384, actual: 256 };
+    let err = Error::DimensionMismatch {
+        expected: 384,
+        actual: 256,
+    };
     let display = format!("{}", err);
     assert!(display.contains("384"));
     assert!(display.contains("256"));
