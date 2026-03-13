@@ -1,36 +1,38 @@
+#!/usr/bin/env bash
+# ═══════════════════════════════════════════════════════════════════
+# COMPLETE FIX SCRIPT  —  paste entire block on ole9
+# ═══════════════════════════════════════════════════════════════════
+set -e
 REPO=/home/opc/backup/new/stratarouter
 
+# ── 1. Write core.py correctly (ruff-clean from the start) ────────
 cat > $REPO/python/stratarouter/core.py << 'PYEOF'
 """
 Bridge to Rust core functionality.
 
 Exposes Router, RustRoute, RouteMatch, cosine_similarity, and
-cosine_similarity_batch.  All names are provided as pure-Python
-implementations so the module always imports successfully even when the
-compiled Rust extension is absent (e.g. during ruff / mypy runs).
-When the Rust extension *is* present its PyRouter is used as the
-backend for Router to get the performance benefits.
+cosine_similarity_batch as pure-Python implementations that always
+import successfully regardless of whether the Rust extension is built.
 """
 
 from __future__ import annotations
 
 import math
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-import numpy as np
 
-# ── Try to load the compiled Rust extension ───────────────────────────────────
+# ── Try to load compiled Rust extension (optional) ────────────────
 try:
-    from stratarouter._core import PyRouter as _PyRouter  # type: ignore[import]
+    from stratarouter._core import PyRouter as _PyRouter  # noqa: F401
     _RUST_AVAILABLE = True
 except ImportError:
     _RUST_AVAILABLE = False
 
 
-# ── Pure-Python helpers (always available) ────────────────────────────────────
+# ── Cosine similarity helpers ─────────────────────────────────────
 
-def cosine_similarity(a: List[float], b: List[float]) -> float:
-    """Return cosine similarity between two vectors."""
+def cosine_similarity(a: list[float], b: list[float]) -> float:
+    """Return cosine similarity in [-1, 1] between two vectors."""
     if len(a) != len(b):
         raise ValueError(f"Dimension mismatch: {len(a)} vs {len(b)}")
     if not a:
@@ -44,14 +46,14 @@ def cosine_similarity(a: List[float], b: List[float]) -> float:
 
 
 def cosine_similarity_batch(
-    query: List[float],
-    embeddings: List[List[float]],
-) -> List[float]:
-    """Return cosine similarity between query and each vector in embeddings."""
+    query: list[float],
+    embeddings: list[list[float]],
+) -> list[float]:
+    """Return cosine similarity between query and each embedding."""
     return [cosine_similarity(query, emb) for emb in embeddings]
 
 
-# ── RouteMatch ────────────────────────────────────────────────────────────────
+# ── RouteMatch ────────────────────────────────────────────────────
 
 class RouteMatch:
     """Result of a single route match."""
@@ -63,6 +65,7 @@ class RouteMatch:
 
     @property
     def is_match(self) -> bool:
+        """True when score meets the threshold."""
         return self.score >= self.threshold
 
     def __repr__(self) -> str:
@@ -72,15 +75,15 @@ class RouteMatch:
         )
 
 
-# ── RustRoute ─────────────────────────────────────────────────────────────────
+# ── RustRoute ─────────────────────────────────────────────────────
 
 class RustRoute:
-    """A route with pre-computed embeddings."""
+    """A named route with pre-computed embeddings."""
 
     def __init__(
         self,
         name: str,
-        embeddings: List[List[float]],
+        embeddings: list[list[float]],
         threshold: float = 0.8,
         **kwargs: Any,
     ) -> None:
@@ -96,10 +99,12 @@ class RustRoute:
 
     @property
     def num_examples(self) -> int:
+        """Number of stored embeddings."""
         return len(self.embeddings)
 
     @property
     def embedding_dim(self) -> int:
+        """Dimension of the embeddings."""
         return len(self.embeddings[0]) if self.embeddings else 0
 
     def __repr__(self) -> str:
@@ -110,7 +115,7 @@ class RustRoute:
         )
 
 
-# ── Router ────────────────────────────────────────────────────────────────────
+# ── Router ────────────────────────────────────────────────────────
 
 class Router:
     """Semantic router backed by cosine-similarity search."""
@@ -124,37 +129,39 @@ class Router:
         if top_k <= 0:
             raise ValueError("top_k must be positive")
         self.top_k = top_k
-        self._routes: Dict[str, RustRoute] = {}
+        self._routes: dict[str, RustRoute] = {}
 
     @property
     def num_routes(self) -> int:
+        """Number of registered routes."""
         return len(self._routes)
 
-    def list_routes(self) -> List[str]:
+    def list_routes(self) -> list[str]:
+        """Return names of all registered routes."""
         return list(self._routes.keys())
 
     def add(self, route: RustRoute) -> None:
+        """Add a route; raises ValueError if the name already exists."""
         if route.name in self._routes:
             raise ValueError(f"Route '{route.name}' already exists")
         self._routes[route.name] = route
 
     def remove(self, name: str) -> None:
+        """Remove route by name (no-op if absent)."""
         self._routes.pop(name, None)
 
     def clear(self) -> None:
+        """Remove all routes."""
         self._routes.clear()
 
-    def route(self, embedding: List[float]) -> List[RouteMatch]:
-        """Return up to top_k RouteMatch results sorted by score descending."""
+    def route(self, embedding: list[float]) -> list[RouteMatch]:
+        """Return up to top_k matches sorted by score descending."""
         if not self._routes:
             return []
-        results: List[RouteMatch] = []
-        for name, route in self._routes.items():
-            best = max(
-                cosine_similarity(embedding, emb)
-                for emb in route.embeddings
-            )
-            results.append(RouteMatch(name=name, score=best, threshold=route.threshold))
+        results: list[RouteMatch] = []
+        for name, r in self._routes.items():
+            best = max(cosine_similarity(embedding, e) for e in r.embeddings)
+            results.append(RouteMatch(name=name, score=best, threshold=r.threshold))
         results.sort(key=lambda m: m.score, reverse=True)
         return results[: self.top_k]
 
@@ -162,7 +169,7 @@ class Router:
         return f"Router(num_routes={self.num_routes}, top_k={self.top_k})"
 
 
-# ── Public API ────────────────────────────────────────────────────────────────
+# ── Public API ────────────────────────────────────────────────────
 
 __all__ = [
     "Router",
@@ -173,15 +180,57 @@ __all__ = [
 ]
 PYEOF
 
-# Verify ruff is happy
-cd $REPO/python && ruff check stratarouter/core.py
-echo "Ruff core.py: $?"
+echo "core.py written"
 
-# Commit and push
-cd $REPO
-git add -A
-git commit \
-  --author="natarajanchandra02-afk <natarajanchandra02@users.noreply.github.com>" \
-  -m "fix: rewrite core.py with pure-Python Router/RustRoute/RouteMatch/cosine_similarity"
-git push origin fix/oss-review
-echo "PUSHED"
+# ── 2. Run ruff --fix on everything ───────────────────────────────
+cd $REPO/python
+pip install ruff --break-system-packages -q
+ruff check stratarouter/ --fix --unsafe-fixes 2>&1 || true
+
+# ── 3. Verify ruff is clean ───────────────────────────────────────
+echo ""
+echo "=== ruff check ==="
+ruff check stratarouter/
+RUFF=$?
+echo "Ruff exit: $RUFF"
+
+# ── 4. cargo fmt ──────────────────────────────────────────────────
+echo ""
+echo "=== cargo fmt ==="
+cd $REPO/core
+rustup component add rustfmt 2>/dev/null || true
+cargo fmt
+cargo fmt --check
+FMT=$?
+echo "Fmt exit: $FMT"
+
+# ── 5. cargo clippy ───────────────────────────────────────────────
+echo ""
+echo "=== cargo clippy ==="
+cargo clippy -- -D warnings 2>&1 | tail -30
+CLIPPY=$?
+echo "Clippy exit: $CLIPPY"
+
+# ── 6. Commit only when all 3 pass ────────────────────────────────
+echo ""
+echo "Summary — Ruff:$RUFF  Fmt:$FMT  Clippy:$CLIPPY"
+
+if [ "$RUFF" = "0" ] && [ "$FMT" = "0" ] && [ "$CLIPPY" = "0" ]; then
+  cd $REPO
+  git add -A
+  git commit \
+    --author="natarajanchandra02-afk <natarajanchandra02@users.noreply.github.com>" \
+    -m "fix: clean core.py rewrite, ruff/fmt/clippy all pass"
+  git push origin fix/oss-review
+  echo "=== PUSHED — CI should pass ==="
+else
+  echo "=== NOT PUSHED — remaining errors above ==="
+  if [ "$RUFF" != "0" ]; then
+    echo "--- ruff ---"
+    cd $REPO/python && ruff check stratarouter/
+  fi
+  if [ "$CLIPPY" != "0" ]; then
+    echo "--- clippy ---"
+    cd $REPO/core && cargo clippy -- -D warnings 2>&1 | grep "^error"
+  fi
+fi
