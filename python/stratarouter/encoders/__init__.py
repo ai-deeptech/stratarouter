@@ -14,19 +14,19 @@ from .base import BaseEncoder
 __all__: list = ["BaseEncoder"]
 
 try:
-    from .huggingface import HuggingFaceEncoder
+    from .huggingface import HuggingFaceEncoder  # noqa: F401
     __all__.append("HuggingFaceEncoder")
 except ImportError:
     pass
 
 try:
-    from .openai import OpenAIEncoder
+    from .openai import OpenAIEncoder  # noqa: F401
     __all__.append("OpenAIEncoder")
 except ImportError:
     pass
 
 try:
-    from .cohere import CohereEncoder
+    from .cohere import CohereEncoder  # noqa: F401
     __all__.append("CohereEncoder")
 except ImportError:
     pass

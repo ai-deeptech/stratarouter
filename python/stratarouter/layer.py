@@ -25,8 +25,6 @@ Example
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
-
 import numpy as np
 
 from .encoders.base import BaseEncoder
@@ -73,8 +71,8 @@ class RouteLayer:
     def __init__(
         self,
         encoder: BaseEncoder,
-        routes: Optional[List[Route]] = None,
-        threshold: Optional[float] = None,
+        routes: list[Route] | None = None,
+        threshold: float | None = None,
     ) -> None:
         if not hasattr(encoder, "encode"):
             raise TypeError("encoder must implement encode(text) -> np.ndarray")
@@ -83,8 +81,8 @@ class RouteLayer:
 
         self.encoder = encoder
         self._global_threshold = threshold
-        self._routes: Dict[str, Route] = {}
-        self._embeddings: Dict[str, List[np.ndarray]] = {}  # name → per-utterance embeddings
+        self._routes: dict[str, Route] = {}
+        self._embeddings: dict[str, list[np.ndarray]] = {}  # name → per-utterance embeddings
 
         for route in routes or []:
             self.add(route)
@@ -94,7 +92,7 @@ class RouteLayer:
     def __call__(
         self,
         text: str,
-        threshold: Optional[float] = None,
+        threshold: float | None = None,
     ) -> RouteChoice:
         """Route ``text`` and return a :class:`~stratarouter.RouteChoice`.
 
@@ -111,7 +109,7 @@ class RouteLayer:
 
         query_emb = self._encode_one(text)
 
-        best_name: Optional[str] = None
+        best_name: str | None = None
         best_score: float = -2.0  # below any valid cosine value
         best_threshold: float = self._global_threshold or 0.82
 
@@ -135,9 +133,9 @@ class RouteLayer:
 
     def route_batch(
         self,
-        texts: List[str],
-        threshold: Optional[float] = None,
-    ) -> List[RouteChoice]:
+        texts: list[str],
+        threshold: float | None = None,
+    ) -> list[RouteChoice]:
         """Route a list of queries, returning one :class:`RouteChoice` per item."""
         return [self(text, threshold=threshold) for text in texts]
 
@@ -177,11 +175,11 @@ class RouteLayer:
         """Number of currently registered routes."""
         return len(self._routes)
 
-    def list_route_names(self) -> List[str]:
+    def list_route_names(self) -> list[str]:
         """Return the names of all registered routes."""
         return list(self._routes.keys())
 
-    def get_route(self, name: str) -> Optional[Route]:
+    def get_route(self, name: str) -> Route | None:
         """Return the :class:`Route` with the given name, or ``None``."""
         return self._routes.get(name)
 

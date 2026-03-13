@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Union
-
 import numpy as np
 
 from .base import BaseEncoder
@@ -49,7 +47,7 @@ class CohereEncoder(BaseEncoder):
     def __init__(
         self,
         model: str = "embed-english-v3.0",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         input_type: str = "search_query",
     ) -> None:
         try:
@@ -69,7 +67,7 @@ class CohereEncoder(BaseEncoder):
 
     # ── BaseEncoder interface ─────────────────────────────────────────────────
 
-    def encode(self, text: Union[str, List[str]]) -> np.ndarray:
+    def encode(self, text: str | list[str]) -> np.ndarray:
         """Encode one or more texts using the Cohere embedding API.
 
         Parameters
@@ -87,7 +85,7 @@ class CohereEncoder(BaseEncoder):
             raise ValueError("text must be a non-empty string or list")
 
         single = isinstance(text, str)
-        texts: List[str] = [text] if single else list(text)
+        texts: list[str] = [text] if single else list(text)
 
         try:
             response = self._client.embed(

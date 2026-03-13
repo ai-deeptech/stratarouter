@@ -8,9 +8,15 @@ import numpy as np
 
 try:
     from stratarouter._core import (
-        Router as _RustRouter,
         Route as _RustRoute,
+    )
+    from stratarouter._core import (
         RouteMatch as _RustRouteMatch,
+    )
+    from stratarouter._core import (
+        Router as _RustRouter,
+    )
+    from stratarouter._core import (
         cosine_similarity,
         cosine_similarity_batch,
     )

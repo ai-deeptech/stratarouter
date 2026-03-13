@@ -16,11 +16,11 @@ import threading
 import warnings
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from .encoders.base import BaseEncoder
-from .route import Route, RouteChoice
-from .types import RouteConfig, RouteResult
+from .route import Route
+from .types import RouteResult
 
 __all__ = ["Router", "DeploymentMode"]
 
@@ -63,9 +63,9 @@ class Router:
 
     def __init__(
         self,
-        encoder: Optional[Union[str, BaseEncoder]] = None,
-        mode: Union[DeploymentMode, str] = DeploymentMode.LOCAL,
-        api_key: Optional[str] = None,
+        encoder: str | BaseEncoder | None = None,
+        mode: DeploymentMode | str = DeploymentMode.LOCAL,
+        api_key: str | None = None,
         dimension: int = 384,
         threshold: float = 0.5,
         **kwargs: Any,
@@ -78,7 +78,7 @@ class Router:
         self.mode = DeploymentMode(mode)
         self.dimension = dimension
         self.threshold = threshold
-        self.routes: Dict[str, Route] = {}
+        self.routes: dict[str, Route] = {}
         self._index_built = False
         self._build_lock = threading.Lock()
 
@@ -89,7 +89,7 @@ class Router:
 
     # ── Initialisation helpers ────────────────────────────────────────────────
 
-    def _init_local(self, encoder: Optional[Union[str, BaseEncoder]]) -> None:
+    def _init_local(self, encoder: str | BaseEncoder | None) -> None:
         if encoder is None:
             encoder = "sentence-transformers/all-MiniLM-L6-v2"
 
@@ -104,7 +104,7 @@ class Router:
         if encoder.dimension != self.dimension:
             warnings.warn(
                 f"Using encoder dimension ({encoder.dimension}) "
-                f"instead of specified dimension ({self.dimension})."
+                f"instead of specified dimension ({self.dimension}).", stacklevel=2
             )
             self.dimension = encoder.dimension
 
@@ -119,7 +119,7 @@ class Router:
                 "Reinstall with: pip install --force-reinstall stratarouter"
             ) from exc
 
-    def _init_cloud(self, api_key: Optional[str]) -> None:
+    def _init_cloud(self, api_key: str | None) -> None:
         if not api_key:
             raise ValueError(
                 "api_key is required for cloud mode.  "
@@ -164,7 +164,7 @@ class Router:
         if route.name in self.routes:
             warnings.warn(
                 f"Route '{route.name}' already exists and will be overwritten.  "
-                "Call build_index() to rebuild the index."
+                "Call build_index() to rebuild the index.", stacklevel=2
             )
 
         self.routes[route.name] = route
@@ -189,7 +189,7 @@ class Router:
             self._index_built = False
 
             if self.mode == DeploymentMode.CLOUD:
-                warnings.warn("build_index() is not required in cloud mode.")
+                warnings.warn("build_index() is not required in cloud mode.", stacklevel=2)
                 return
 
             if not self.routes:
@@ -324,7 +324,7 @@ class Router:
             raise RuntimeError(f"Failed to save router: {exc}") from exc
 
     @classmethod
-    def load(cls, path: str, **kwargs: Any) -> "Router":
+    def load(cls, path: str, **kwargs: Any) -> Router:
         """Load a router previously saved with :meth:`save`.
 
         Parameters
@@ -359,7 +359,7 @@ class Router:
             enc_type = state["encoder_config"].get("type", "unknown")
             warnings.warn(
                 f"Router was saved with encoder '{enc_type}'.  "
-                "Pass encoder=<instance> to load() for best results."
+                "Pass encoder=<instance> to load() for best results.", stacklevel=2
             )
 
         router = cls(
@@ -373,12 +373,12 @@ class Router:
             try:
                 router.add(Route(**route_data))
             except Exception as exc:
-                warnings.warn(f"Skipping malformed route during load: {exc}")
+                warnings.warn(f"Skipping malformed route during load: {exc}", stacklevel=2)
 
         if router.mode == DeploymentMode.LOCAL:
             try:
                 router.build_index()
             except Exception as exc:
-                warnings.warn(f"Could not build index during load: {exc}")
+                warnings.warn(f"Could not build index during load: {exc}", stacklevel=2)
 
         return router

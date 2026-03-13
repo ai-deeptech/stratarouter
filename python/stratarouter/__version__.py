@@ -5,7 +5,7 @@ read from the installed package metadata so it is always in sync, even when
 the package is installed in editable mode.
 """
 
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
 
 try:
     __version__: str = version("stratarouter")
