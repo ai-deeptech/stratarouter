@@ -3,6 +3,7 @@ Bridge to Rust core functionality
 """
 
 from typing import List
+
 import numpy as np
 
 try:

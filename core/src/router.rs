@@ -1,9 +1,9 @@
 //! Main router implementation.
 
 use crate::algorithms::{CalibrationManager, HybridScorer};
+use crate::error::{Error, Result};
 use crate::index::LinearIndex;
 use crate::types::{Route, RouteResult, RouteScores};
-use crate::error::{Error, Result};
 use std::collections::HashMap;
 use std::time::Instant;
 
