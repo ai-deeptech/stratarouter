@@ -74,7 +74,7 @@ Changelog     = "https://github.com/ai-deeptech/stratarouter/blob/main/CHANGELOG
 [tool.maturin]
 manifest-path = "../core/Cargo.toml"
 module-name   = "stratarouter._core"
-features      = ["pyo3/extension-module"]
+features      = ["python"]
 
 # ── Linting & formatting ──────────────────────────────────────────────────────
 
