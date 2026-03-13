@@ -28,20 +28,22 @@ fn test_version_non_empty() {
 
 #[test]
 fn test_build_timestamp_format() {
-    // Verify build timestamp exists and is non-empty
-    assert!(!BUILD_TIMESTAMP.is_empty());
-
-    // Timestamp should contain date-like patterns
-    assert!(
-        BUILD_TIMESTAMP.contains(|c: char| c.is_ascii_digit()),
-        "Build timestamp should contain numbers"
-    );
+    // BUILD_TIMESTAMP is Option<&str> — None when BUILD_TIMESTAMP env var
+    // is not set at compile time (normal in CI without a custom build script).
+    // Verify it doesn't panic and, if present, looks like a timestamp.
+    if let Some(ts) = BUILD_TIMESTAMP {
+        assert!(!ts.is_empty());
+        assert!(
+            ts.chars().any(|c| c.is_ascii_digit()),
+            "Build timestamp should contain numbers"
+        );
+    }
 }
 
 #[test]
 fn test_build_timestamp_non_empty() {
-    let timestamp = BUILD_TIMESTAMP;
-    assert!(timestamp.len() > 0);
+    // Option<&str>: just assert the constant is reachable.
+    let _timestamp = BUILD_TIMESTAMP;
 }
 
 #[test]

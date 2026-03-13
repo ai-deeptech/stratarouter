@@ -46,12 +46,12 @@ def encoder():
 
 @pytest.fixture()
 def billing_route():
-    return Route(name="billing", utterances=["billing", "invoice"], threshold=0.7)
+    return Route(name="billing", utterances=["billing", "balance"], threshold=0.7)
 
 
 @pytest.fixture()
 def support_route():
-    return Route(name="support", utterances=["support", "help"], threshold=0.7)
+    return Route(name="support", utterances=["support", "service"], threshold=0.7)
 
 
 # ── Creation ──────────────────────────────────────────────────────────────────

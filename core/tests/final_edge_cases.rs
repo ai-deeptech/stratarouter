@@ -380,25 +380,25 @@ fn test_route_debug() {
 // ============================================================================
 
 #[test]
-fn test_isotonic_calibrator_new() {
-    use stratarouter_core::algorithms::calibration::IsotonicCalibrator;
+fn test_score_normalizer_new() {
+    use stratarouter_core::algorithms::calibration::ScoreNormalizer;
 
-    let calibrator = IsotonicCalibrator::new();
-    let (score, unc) = calibrator.calibrate(0.5);
+    let normalizer = ScoreNormalizer::new();
+    let (score, unc) = normalizer.calibrate(0.5);
 
     assert!(score > 0.0 && score < 1.0);
     assert!(unc > 0.0);
 }
 
 #[test]
-fn test_isotonic_calibrator_default() {
-    use stratarouter_core::algorithms::calibration::IsotonicCalibrator;
+fn test_score_normalizer_default() {
+    use stratarouter_core::algorithms::calibration::ScoreNormalizer;
 
-    let cal1 = IsotonicCalibrator::new();
-    let cal2 = IsotonicCalibrator::default();
+    let n1 = ScoreNormalizer::new();
+    let n2 = ScoreNormalizer::default();
 
-    let (s1, _) = cal1.calibrate(0.5);
-    let (s2, _) = cal2.calibrate(0.5);
+    let (s1, _) = n1.calibrate(0.5);
+    let (s2, _) = n2.calibrate(0.5);
 
     assert_eq!(s1, s2);
 }
