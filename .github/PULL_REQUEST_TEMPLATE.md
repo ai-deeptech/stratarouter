@@ -1,10 +1,23 @@
 ## Summary
+<!-- One sentence: what does this PR do? -->
 
-## Type: [ ] Bug fix  [ ] Feature  [ ] Docs  [ ] Performance
+## Motivation
+<!-- Why is this change needed? Link to the issue it closes if applicable. -->
+Closes #
 
-## Checklist
+## Changes
+<!-- Bullet list of what changed and why. -->
+-
+
+## Testing
+<!-- How did you verify this? -->
 - [ ] `cargo test --release` passes
 - [ ] `pytest tests/ -v` passes
-- [ ] `CHANGELOG.md` updated
-- [ ] No secrets committed (`git diff HEAD | grep -i "api_key\|password\|secret"`)
-- [ ] `cargo clippy -- -D warnings` clean
+- [ ] New tests added for new behaviour
+
+## Checklist
+- [ ] `cargo fmt` and `cargo clippy -- -D warnings` pass
+- [ ] `ruff check python/` passes
+- [ ] `CHANGELOG.md` updated under `[Unreleased]`
+- [ ] Documentation updated (docstrings, README) if API changed
+- [ ] No breaking changes, or breaking changes are documented

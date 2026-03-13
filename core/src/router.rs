@@ -1,6 +1,6 @@
 //! Main router implementation.
 
-use crate::algorithms::{HybridScorer, CalibrationManager};
+use crate::algorithms::{CalibrationManager, HybridScorer};
 use crate::index::LinearIndex;
 use crate::types::{Route, RouteResult, RouteScores};
 use crate::error::{Error, Result};

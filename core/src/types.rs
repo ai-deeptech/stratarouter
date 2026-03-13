@@ -47,7 +47,7 @@ impl Route {
         
         if self.examples.is_empty() && self.description.is_empty() {
             return Err(crate::Error::invalid_input(
-            format!("Route '{}' must have examples or description", self.id)
+                format!("Route '{}' must have examples or description", self.id),
             ));
         }
         

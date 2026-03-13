@@ -18,9 +18,9 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
+from .encoders.base import BaseEncoder
 from .route import Route, RouteChoice
 from .types import RouteConfig, RouteResult
-from .encoders.base import BaseEncoder
 
 __all__ = ["Router", "DeploymentMode"]
 

@@ -15,8 +15,8 @@ Router
 """
 
 from .__version__ import __version__
-from .route import Route, RouteChoice
 from .layer import RouteLayer
+from .route import Route, RouteChoice
 from .router import Router, DeploymentMode
 
 __all__ = [

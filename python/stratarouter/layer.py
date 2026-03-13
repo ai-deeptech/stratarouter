@@ -29,8 +29,8 @@ from typing import Dict, List, Optional
 
 import numpy as np
 
-from .route import Route, RouteChoice
 from .encoders.base import BaseEncoder
+from .route import Route, RouteChoice
 
 __all__ = ["RouteLayer"]
 
