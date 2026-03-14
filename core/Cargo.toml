@@ -1,12 +1,13 @@
 [package]
 name = "stratarouter-core"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
-authors = ["StrataRouter Contributors <hello@stratarouter.dev>"]
+authors = ["StrataRouter Contributors <support@stratarouter.com>"]
 license = "MIT"
-description = "High-performance semantic routing engine"
+description = "High-performance semantic routing engine — Rust core for StrataRouter"
 repository = "https://github.com/ai-deeptech/stratarouter"
-homepage = "https://github.com/ai-deeptech/stratarouter"
+homepage = "https://stratarouter.com"
+documentation = "https://docs.stratarouter.com"
 readme = "README.md"
 keywords = ["routing", "nlp", "ai", "semantic", "embeddings"]
 categories = ["algorithms", "science"]
@@ -43,7 +44,7 @@ parking_lot = "0.12"
 bincode = "1.3"
 
 # Text processing
-regex    = "1.10"
+regex     = "1.10"
 once_cell = "1.19"
 
 # ── Dev / Bench ───────────────────────────────────────────────────────────────
@@ -64,15 +65,15 @@ production = []
 # ── Build profiles ────────────────────────────────────────────────────────────
 
 [profile.release]
-opt-level      = 3
-lto            = "fat"
-codegen-units  = 1
-strip          = "symbols"
-panic          = "abort"
-debug          = false
-rpath          = false
-incremental    = false
-# overflow-checks intentionally left at the default (true) for safety.
+opt-level     = 3
+lto           = "fat"
+codegen-units = 1
+strip         = "symbols"
+panic         = "abort"
+debug         = false
+rpath         = false
+incremental   = false
+# overflow-checks intentionally left at default (true) for safety.
 
 [profile.bench]
 inherits = "release"
