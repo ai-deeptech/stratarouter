@@ -139,8 +139,9 @@ impl RouteScores {
     ///
     /// `total` is the weighted sum using the same weights as [`HybridScorer`].
     pub fn new(semantic: f32, keyword: f32, pattern: f32) -> Self {
-        let total =
-            Self::DENSE_WEIGHT * semantic + Self::SPARSE_WEIGHT * keyword + Self::RULE_WEIGHT * pattern;
+        let total = Self::DENSE_WEIGHT * semantic
+            + Self::SPARSE_WEIGHT * keyword
+            + Self::RULE_WEIGHT * pattern;
         Self {
             semantic,
             keyword,
