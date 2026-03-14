@@ -45,7 +45,7 @@ bincode = "1.3"
 
 # Text processing
 regex     = "1.10"
-once_cell = "1.19"
+once_cell = "1.21"
 
 # ── Dev / Bench ───────────────────────────────────────────────────────────────
 
