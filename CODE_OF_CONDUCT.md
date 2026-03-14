@@ -1,4 +1,3 @@
-"""
 # Contributor Covenant Code of Conduct
 
 ## Our Pledge
@@ -31,22 +30,34 @@ Examples of unacceptable behavior:
 ## Enforcement Responsibilities
 
 Project maintainers are responsible for clarifying and enforcing our standards
-of acceptable behavior.
+of acceptable behavior and will take appropriate and fair corrective action in
+response to any behavior they deem inappropriate, threatening, offensive, or
+harmful.
 
 ## Scope
 
-This Code of Conduct applies within all community spaces.
+This Code of Conduct applies within all community spaces — GitHub Issues,
+Pull Requests, Discussions, and any other official StrataRouter channels.
 
 ## Enforcement
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported to hello@inteleion.ai. All complaints will be reviewed and investigated
-promptly and fairly.
+reported to **support@stratarouter.com**. All complaints will be reviewed and
+investigated promptly and fairly. The project team is obligated to maintain
+confidentiality with regard to the reporter of an incident.
+
+## Enforcement Guidelines
+
+Maintainers will follow these Community Impact Guidelines:
+
+1. **Correction** — private written warning, clarity on the violation
+2. **Warning** — public warning with consequences for continued behavior
+3. **Temporary Ban** — temporary ban from community interaction
+4. **Permanent Ban** — permanent ban for severe or sustained violations
 
 ## Attribution
 
 This Code of Conduct is adapted from the [Contributor Covenant][homepage],
-version 2.0.
+version 2.1, available at https://www.contributor-covenant.org/version/2/1/code_of_conduct.html
 
 [homepage]: https://www.contributor-covenant.org
-"""

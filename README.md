@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/logo.png" alt="StrataRouter" width="120" />
+<img src="docs/assets/logo.svg" alt="StrataRouter" width="120" />
 
 # StrataRouter
 
@@ -14,6 +14,7 @@ Fast Rust core. Hybrid scoring. 9 framework integrations.
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
 [![Rust 1.70+](https://img.shields.io/badge/core-Rust%201.70+-orange.svg)](https://www.rust-lang.org/)
 [![CI](https://github.com/ai-deeptech/stratarouter/actions/workflows/ci.yml/badge.svg)](https://github.com/ai-deeptech/stratarouter/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-docs.stratarouter.com-6366f1.svg)](https://docs.stratarouter.com)
 
 </div>
 
@@ -28,26 +29,45 @@ While LangChain and LlamaIndex provide prompt-level routing helpers,
 StrataRouter provides **deterministic execution, cost-aware model selection,
 governance, and compliance** at the system level.
 
+```mermaid
+graph TD
+    Q["Your Query"] --> CORE
+
+    subgraph CORE["StrataRouter Core · MIT · this repo"]
+        A["Intent Detection"] --> B["Hybrid Scoring\n(dense · BM25 · rule)"]
+        B --> C["Confidence Calibration"]
+    end
+
+    CORE --> RUNTIME
+
+    subgraph RUNTIME["StrataRouter Runtime · Apache 2.0"]
+        D["TCFP Execution"] --> E["Semantic Cache"]
+        E --> F["REST API · Prometheus"]
+    end
+
+    RUNTIME --> ENTERPRISE
+
+    subgraph ENTERPRISE["StrataRouter Enterprise · Commercial"]
+        G["Consensus Engine"] --> H["Immutable Audit Log"]
+        H --> I["Policy Engine · Multi-tenant"]
+    end
 ```
-Your Query
-    ↓
-┌──────────────────────────────────────────────────┐
-│  StrataRouter Core   (this repo, MIT)            │
-│  Intent detection · Semantic matching            │
-│  Hybrid scoring · Confidence calibration         │
-└─────────────────────┬────────────────────────────┘
-                      ↓
-┌──────────────────────────────────────────────────┐
-│  StrataRouter Runtime   (Apache 2.0)             │
-│  TCFP execution · Semantic cache                 │
-│  Batch dedup · REST API · Prometheus             │
-└─────────────────────┬────────────────────────────┘
-                      ↓
-┌──────────────────────────────────────────────────┐
-│  StrataRouter Enterprise   (commercial)          │
-│  Consensus · Audit log · Policy · Multi-tenant   │
-└──────────────────────────────────────────────────┘
-```
+
+---
+
+## Why StrataRouter?
+
+Most AI frameworks treat routing as an afterthought — a few `if/else` chains or a
+basic vector similarity lookup. StrataRouter treats routing as **infrastructure**:
+
+| Problem | StrataRouter Answer |
+|---|---|
+| Slow Python similarity loops | Rust core — 8.7 ms P99 latency |
+| Memory bloat at scale | 64 MB for 1K routes (vs 2.1 GB in pure-Python routers) |
+| No confidence calibration | Per-route piecewise-linear score normalisation |
+| No hybrid keyword + semantic | BM25 + dense embeddings combined |
+| No audit trail | Immutable SHA-256 log (Enterprise) |
+| No cost control | Per-route budget enforcement (Enterprise) |
 
 ---
 
@@ -63,17 +83,18 @@ Your Query
 | Accuracy | **95.4%** | 84.7% | **+12.7%** |
 
 > Benchmarks run on Ubuntu 22.04, AMD EPYC 7B13, Python 3.11, sentence-transformers/all-MiniLM-L6-v2.
-> See [`integrations/benchmarks/`](integrations/benchmarks/) for methodology and reproduction scripts.
+> See [`benchmarks/`](benchmarks/) for methodology and reproduction scripts.
 
-### vs LangChain Router
+### vs Competitors
 
-| | StrataRouter | LangChain Router |
-|---|:---:|:---:|
-| Routing engine | Rust (hybrid scoring) | Python |
-| Confidence calibration | Piecewise-linear normalisation | None |
-| Sparse scoring | BM25 keyword matching | None |
-| Self-hostable server | ✅ (Runtime) | ❌ |
-| Workflow execution | ✅ (TCFP) | ❌ |
+| Feature | StrataRouter | semantic-router | LangChain Router | route0x |
+|---|:---:|:---:|:---:|:---:|
+| Rust core | ✅ | ❌ | ❌ | ❌ |
+| Hybrid BM25 + dense | ✅ | ❌ | ❌ | ❌ |
+| Confidence calibration | ✅ | ❌ | ❌ | ❌ |
+| Cost-aware routing | ✅ | ❌ | ❌ | ❌ |
+| Audit log | ✅ | ❌ | ❌ | ❌ |
+| Sub-10ms P99 | ✅ | ❌ | ❌ | ❌ |
 
 ---
 
@@ -97,7 +118,6 @@ pip install stratarouter[all]           # everything
 from stratarouter import Route, RouteLayer
 from stratarouter.encoders import HuggingFaceEncoder
 
-# Define routes
 routes = [
     Route(
         name="billing",
@@ -126,26 +146,39 @@ print(bool(result))      # True — score >= threshold
 from stratarouter import Router, Route
 
 router = Router(encoder="sentence-transformers/all-MiniLM-L6-v2")
-
-router.add(Route(
-    name="billing",
-    utterances=["Where's my invoice?", "I need a refund"],
-))
-router.add(Route(
-    name="support",
-    utterances=["App is crashing", "Can't login"],
-))
-
+router.add(Route(name="billing", utterances=["Where's my invoice?", "I need a refund"]))
+router.add(Route(name="support", utterances=["App is crashing", "Can't login"]))
 router.build_index()
 
 result = router.route("I need my April invoice")
 print(result.route_id)    # "billing"
 print(result.confidence)  # 0.89 — calibrated score
-print(result.latency_ms)  # 2.3ms
+print(result.latency_ms)  # 2.3
 
-# Save and reload — no re-indexing needed
 router.save("my_router.json")
-router = Router.load("my_router.json")
+router = Router.load("my_router.json")   # no re-indexing needed
+```
+
+---
+
+## 🏗️ Routing Pipeline
+
+```mermaid
+flowchart LR
+    Q["User Query"] --> E["Embedding\nEncoder"]
+    E --> HS
+
+    subgraph HS["Hybrid Scorer · Rust"]
+        D["Dense\nCosine\n×0.6427"]
+        B["BM25\nKeyword\n×0.2891"]
+        R["Rule\nPattern\n×0.0682"]
+    end
+
+    D --> CAL["Calibration\nper-route\npiecewise-linear"]
+    B --> CAL
+    R --> CAL
+    CAL --> SEL["Route\nSelection\nargmax"]
+    SEL --> OUT["RouteResult\nroute_id · confidence\nlatency_ms"]
 ```
 
 ---
@@ -161,44 +194,7 @@ from stratarouter.integrations.openai_assistants import StrataRouterAssistant
 from stratarouter.integrations.google_agent      import StrataRouterVertexAI
 ```
 
-Runnable integration examples → [`integrations/`](integrations/)
-
----
-
-## 🏗️ Architecture
-
-```
-stratarouter/
-├── core/
-│   ├── src/
-│   │   ├── router.rs              ← Main router, hybrid scoring pipeline
-│   │   ├── types.rs               ← Route, RouteResult, RouteScores
-│   │   ├── cache.rs               ← LRU embedding cache
-│   │   ├── ffi.rs                 ← PyO3 Python bindings (PyRouter, PyRoute)
-│   │   ├── algorithms/
-│   │   │   ├── hybrid_scoring.rs  ← dense(0.6427) + BM25(0.2891) + rule(0.0682)
-│   │   │   ├── calibration.rs     ← piecewise-linear score normalisation per route
-│   │   │   └── vector_ops.rs      ← cosine similarity (scalar; SIMD planned)
-│   │   └── index/
-│   │       └── hnsw.rs            ← Linear scan O(N); graph-based HNSW planned
-│   ├── tests/                     ← Rust integration tests
-│   └── benches/                   ← Criterion benchmarks
-├── python/
-│   └── stratarouter/
-│       ├── layer.py               ← RouteLayer: high-level API (pure Python)
-│       ├── router.py              ← Router: low-level API (Rust core)
-│       ├── route.py               ← Route + RouteChoice (public data classes)
-│       ├── types.py               ← RouteConfig, RouteResult (internal)
-│       ├── encoders/              ← HuggingFace, OpenAI, Cohere
-│       ├── integrations/          ← 9 framework adapters
-│       └── cloud/
-│           └── client.py          ← Thread-safe httpx CloudClient
-├── tests/                         ← pytest suite
-├── examples/                      ← quickstart, advanced_routing, langchain demo
-└── integrations/                  ← integration examples + benchmarks
-```
-
-Python ↔ Rust via [PyO3/Maturin](https://maturin.rs/) zero-copy bindings.
+Runnable examples → [`integrations/`](integrations/)
 
 ---
 
@@ -222,39 +218,33 @@ Full roadmap → [ROADMAP.md](ROADMAP.md)
 
 | | |
 |---|---|
-| [Getting Started](docs/getting-started.md) | Install + first router in 5 min |
-| [API Reference](docs/api-reference.md) | RouteLayer, Router, Route, RouteChoice |
-| [Integrations](docs/integrations.md) | All 9 framework guides |
-| [Architecture](docs/architecture.md) | Rust internals, scoring, calibration |
-| [Deployment](docs/deployment.md) | Docker, K8s, server |
+| [Getting Started](https://docs.stratarouter.com/getting-started) | Install + first router in 5 min |
+| [API Reference](https://docs.stratarouter.com/api-reference) | RouteLayer, Router, Route, RouteChoice |
+| [Integrations](https://docs.stratarouter.com/integrations) | All 9 framework guides |
+| [Architecture](https://docs.stratarouter.com/architecture) | Rust internals, scoring, calibration |
+| [Deployment](https://docs.stratarouter.com/deployment) | Docker, K8s, server |
 | [Changelog](CHANGELOG.md) | Release history |
 | [Roadmap](ROADMAP.md) | What's coming |
+
+Full docs → **[docs.stratarouter.com](https://docs.stratarouter.com)**
 
 ---
 
 ## 🏗️ Development
 
 ```bash
-# Clone repository
 git clone https://github.com/ai-deeptech/stratarouter.git
 cd stratarouter
 
-# Install development dependencies
 pip install -e "python/.[dev]"
-
-# Build Rust core
-cd core && cargo build --release && cd ..
-
-# Install Python package (with Rust core)
 cd python && maturin develop --release && cd ..
 
-# Run all tests
 make test
 ```
 
 ---
 
-## 🏢 Platform
+## 🏢 Platform Tiers
 
 | | Core (MIT) | Runtime (Apache 2.0) | Enterprise |
 |---|:---:|:---:|:---:|
@@ -270,18 +260,15 @@ make test
 | Multi-tenant isolation | — | — | ✅ |
 
 → **[Runtime](https://github.com/ai-deeptech/stratarouter-runtime)**  
-→ **Enterprise:** [hello@stratarouter.dev](mailto:hello@stratarouter.dev)  
-→ **Docs:** [docs.stratarouter.com](https://docs.stratarouter.com)
+→ **Enterprise:** [support@stratarouter.com](mailto:support@stratarouter.com)  
+→ **Docs:** [docs.stratarouter.com](https://docs.stratarouter.com)  
+→ **Website:** [stratarouter.com](https://stratarouter.com)
 
 ---
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). PRs welcome for:
-- New encoders (Mistral, Gemini, Ollama)
-- Additional framework integrations
-- Benchmark improvements
-- Documentation and examples
+See [CONTRIBUTING.md](CONTRIBUTING.md) · [SUPPORT.md](SUPPORT.md) · [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 ---
 

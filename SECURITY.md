@@ -15,10 +15,10 @@ We actively support security updates for:
 
 ### Responsible Disclosure
 
-1. **Email**: security@inteleion.ai
-2. **PGP Key**: Available at keybase.io/inteleionai
+1. **Email**: support@stratarouter.com
+2. **Subject line**: `[SECURITY] Brief description`
 3. **Response Time**: Within 48 hours
-4. **Status Updates**: Every 3-5 business days
+4. **Status Updates**: Every 3–5 business days
 
 ### What to Include
 
@@ -35,13 +35,15 @@ Subject: [SECURITY] Brief description
 
 ### Our Commitment
 
+| Severity | CVSS Range | Response SLA |
+|---|---|---|
+| Critical | 9.0–10.0 | 24–72 hours |
+| High | 7.0–8.9 | 1 week |
+| Medium | 4.0–6.9 | 2 weeks |
+| Low | 0.1–3.9 | Next release |
+
 - **Acknowledgment**: Within 48 hours
 - **Initial Assessment**: Within 5 business days
-- **Fix Timeline**:
-  - Critical (CVSS 9.0-10.0): 24-72 hours
-  - High (CVSS 7.0-8.9): 1 week
-  - Medium (CVSS 4.0-6.9): 2 weeks
-  - Low (CVSS 0.1-3.9): Next release
 
 ## Security Best Practices
 
@@ -64,9 +66,9 @@ Implement rate limiting in production to prevent abuse.
 
 #### Memory Limits
 Monitor memory usage:
-- ~64MB per 1000 routes
-- Scale linearly
-- Set ulimits in production
+- ~64 MB per 1 000 routes
+- Scales linearly
+- Set `ulimits` in production
 
 ### For Developers
 
@@ -81,7 +83,7 @@ Monitor memory usage:
 We follow coordinated disclosure:
 1. Private notification to affected parties
 2. Fix developed and tested
-3. Security advisory published
+3. Security advisory published on GitHub
 4. CVE assigned if applicable
 
 ## Security Audit Log
@@ -94,5 +96,7 @@ We follow coordinated disclosure:
 
 ## Contact
 
-- Security: security@inteleion.ai
-- General: hello@inteleion.ai
+- **Security reports**: support@stratarouter.com
+- **General enquiries**: support@stratarouter.com
+- **Docs**: https://docs.stratarouter.com
+- **Website**: https://stratarouter.com
