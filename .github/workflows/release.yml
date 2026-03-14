@@ -95,7 +95,7 @@ jobs:
   # ── 4. Create GitHub Release ────────────────────────────────────────────────
   github-release:
     name: GitHub Release
-    needs: publish-pypi
+    needs: [build-wheels, build-sdist]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
