@@ -92,3 +92,7 @@ core/coverage/
 # ── Docs build ────────────────────────────────────────────────────────────────
 site/
 docs/_build/
+
+# ── Internal scripts (never publish) ─────────────────────────────────────────
+oss_fix.sh
+test3.sh

@@ -14,6 +14,7 @@ Fast Rust core. Hybrid scoring. 9 framework integrations.
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://python.org)
 [![Rust 1.70+](https://img.shields.io/badge/core-Rust%201.70+-orange.svg)](https://www.rust-lang.org/)
 [![CI](https://github.com/ai-deeptech/stratarouter/actions/workflows/ci.yml/badge.svg)](https://github.com/ai-deeptech/stratarouter/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/ai-deeptech/stratarouter/branch/main/graph/badge.svg)](https://codecov.io/gh/ai-deeptech/stratarouter)
 [![Docs](https://img.shields.io/badge/docs-docs.stratarouter.com-6366f1.svg)](https://docs.stratarouter.com)
 
 </div>
