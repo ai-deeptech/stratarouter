@@ -1,4 +1,5 @@
-# This file is intentionally empty.
+# backup_setup.py — retired development artefact.
 #
-# backup_setup.py was a development artefact and has been retired.
-# The build system is configured entirely via pyproject.toml + maturin.
+# This file is intentionally empty. All build configuration lives in
+# pyproject.toml + maturin. This file will be removed in the next
+# clean-up release. See CHANGELOG.md [0.2.1].
