@@ -5,7 +5,7 @@ build-backend = "maturin"
 [project]
 name = "stratarouter"
 # Single source of truth for the version — do NOT duplicate in __version__.py
-version = "0.2.1"
+version = "0.2.2"
 description = "High-performance semantic routing backed by a Rust core"
 readme = "README.md"
 requires-python = ">=3.8"
