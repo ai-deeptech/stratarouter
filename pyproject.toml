@@ -1,31 +1,66 @@
 [build-system]
-requires = ["maturin>=1.0,<2.0"]
+requires = ["maturin>=1.4,<2.0"]
 build-backend = "maturin"
 
 [project]
 name = "stratarouter"
-version = "0.2.0"
-description = "High-performance semantic router with hybrid scoring"
+version = "0.2.1"
+description = "High-performance semantic routing for AI applications — Rust core, hybrid scoring, 9 framework integrations"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
+license = { text = "MIT" }
 authors = [
-    {name = "StrataRouter Team"}
+    { name = "StrataRouter Contributors", email = "support@stratarouter.com" }
 ]
+keywords = ["routing", "semantic", "embeddings", "llm", "ai", "nlp", "rust", "langchain", "agents"]
 classifiers = [
-    "Programming Language :: Rust",
-    "Programming Language :: Python :: Implementation :: CPython",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "numpy>=1.20.0",
+    "numpy>=1.21.0",
+    "pydantic>=2.0.0",
 ]
 
 [project.optional-dependencies]
+huggingface = ["sentence-transformers>=2.2.0"]
+openai      = ["openai>=1.0.0"]
+cohere      = ["cohere>=4.0.0"]
+langchain   = ["langchain-core>=0.1.0"]
+cloud       = ["httpx>=0.24.0"]
+all = [
+    "sentence-transformers>=2.2.0",
+    "openai>=1.0.0",
+    "cohere>=4.0.0",
+    "langchain-core>=0.1.0",
+    "httpx>=0.24.0",
+]
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+    "maturin>=1.4,<2.0",
 ]
 
+[project.urls]
+Homepage      = "https://stratarouter.com"
+Documentation = "https://docs.stratarouter.com"
+Repository    = "https://github.com/ai-deeptech/stratarouter"
+"Bug Tracker" = "https://github.com/ai-deeptech/stratarouter/issues"
+Changelog     = "https://github.com/ai-deeptech/stratarouter/blob/main/CHANGELOG.md"
+
 [tool.maturin]
-module-name = "stratarouter"
+module-name = "stratarouter._core"
+features    = ["python"]
