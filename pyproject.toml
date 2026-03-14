@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "stratarouter"
-version = "0.2.2"
+version = "0.2.3"
 description = "High-performance semantic routing for AI applications — Rust core, hybrid scoring, 9 framework integrations"
 readme = "README.md"
 requires-python = ">=3.8"
