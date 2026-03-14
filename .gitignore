@@ -92,3 +92,15 @@ core/coverage/
 # ── Docs build ────────────────────────────────────────────────────────────────
 site/
 docs/_build/
+
+# Dev artefacts (never commit these)
+oss_fix.sh
+test3.sh
+test2.sh
+backup_setup.py
+setup.py
+"New Text Document.txt"
+*.rs_*
+DELETE_THESE_FILES.txt
+dist/
+target/
