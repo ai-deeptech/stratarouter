@@ -112,24 +112,35 @@ pub struct RouteResult {
 }
 
 /// Routing scores
+///
+/// Weight breakdown (must match `algorithms/hybrid_scoring.rs`):
+///   total = 0.6427 × semantic + 0.2891 × keyword + 0.0682 × pattern
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct RouteScores {
-    /// Semantic similarity score (0.0-1.0)
+    /// Semantic similarity score (0.0–1.0)
     pub semantic: f32,
-    /// Keyword match score (0.0-1.0)
+    /// Keyword match score (0.0–1.0)
     pub keyword: f32,
-    /// Pattern match score (0.0-1.0)
+    /// Pattern match score (0.0–1.0)
     pub pattern: f32,
-    /// Total hybrid score (0.0-1.0)
+    /// Total hybrid score (0.0–1.0)
     pub total: f32,
-    /// Calibrated confidence (0.0-1.0)
+    /// Calibrated confidence (0.0–1.0)
     pub confidence: f32,
 }
 
 impl RouteScores {
-    /// Create new scores
+    // Weights must stay in sync with `HybridScorer` in algorithms/hybrid_scoring.rs.
+    const DENSE_WEIGHT: f32 = 0.6427;
+    const SPARSE_WEIGHT: f32 = 0.2891;
+    const RULE_WEIGHT: f32 = 0.0682;
+
+    /// Construct scores from the three component values.
+    ///
+    /// `total` is the weighted sum using the same weights as [`HybridScorer`].
     pub fn new(semantic: f32, keyword: f32, pattern: f32) -> Self {
-        let total = (semantic * 0.6) + (keyword * 0.3) + (pattern * 0.1);
+        let total =
+            Self::DENSE_WEIGHT * semantic + Self::SPARSE_WEIGHT * keyword + Self::RULE_WEIGHT * pattern;
         Self {
             semantic,
             keyword,
@@ -181,7 +192,38 @@ mod tests {
     }
 
     #[test]
-    fn test_route_scores() {
+    fn test_route_scores_weight_consistency() {
+        // Verify RouteScores::new weights match HybridScorer weights exactly.
+        let scores = RouteScores::new(1.0, 0.0, 0.0);
+        let expected = 0.6427_f32;
+        assert!(
+            (scores.total - expected).abs() < 1e-4,
+            "dense weight mismatch: got {}, expected {}",
+            scores.total,
+            expected
+        );
+
+        let scores = RouteScores::new(0.0, 1.0, 0.0);
+        let expected = 0.2891_f32;
+        assert!(
+            (scores.total - expected).abs() < 1e-4,
+            "keyword weight mismatch: got {}, expected {}",
+            scores.total,
+            expected
+        );
+
+        let scores = RouteScores::new(0.0, 0.0, 1.0);
+        let expected = 0.0682_f32;
+        assert!(
+            (scores.total - expected).abs() < 1e-4,
+            "pattern weight mismatch: got {}, expected {}",
+            scores.total,
+            expected
+        );
+    }
+
+    #[test]
+    fn test_route_scores_in_range() {
         let scores = RouteScores::new(0.8, 0.6, 0.4);
         assert!(scores.total > 0.0);
         assert!(scores.total <= 1.0);
