@@ -99,4 +99,4 @@ router = Router.load("router.json")
 ## Help
 
 - [GitHub Issues](https://github.com/ai-deeptech/stratarouter/issues)
-- [hello@stratarouter.dev](mailto:hello@stratarouter.dev)
+- [support@stratarouter.com](mailto:support@stratarouter.com)
