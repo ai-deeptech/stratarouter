@@ -1,0 +1,14 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 GitHub Discussions (Q&A, ideas, show & tell)
+    url: https://github.com/ai-deeptech/stratarouter/discussions
+    about: Ask questions, share what you built, or discuss ideas here.
+  - name: 📖 Documentation
+    url: https://docs.stratarouter.com
+    about: Full API reference, tutorials, and architecture guides.
+  - name: 📧 Email Support
+    url: mailto:support@stratarouter.com
+    about: For private enquiries or enterprise questions.
+  - name: 🔒 Security Vulnerabilities
+    url: mailto:support@stratarouter.com
+    about: Do NOT use a GitHub issue — email us directly for security reports.
