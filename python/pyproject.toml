@@ -65,8 +65,8 @@ dev = [
 ]
 
 [project.urls]
-Homepage      = "https://github.com/ai-deeptech/stratarouter"
-Documentation = "https://github.com/ai-deeptech/stratarouter#readme"
+Homepage      = "https://stratarouter.com"
+Documentation = "https://docs.stratarouter.com"
 Repository    = "https://github.com/ai-deeptech/stratarouter"
 "Bug Tracker" = "https://github.com/ai-deeptech/stratarouter/issues"
 Changelog     = "https://github.com/ai-deeptech/stratarouter/blob/main/CHANGELOG.md"

@@ -18,6 +18,7 @@ from .__version__ import __version__
 from .layer import RouteLayer
 from .route import Route, RouteChoice
 from .router import DeploymentMode, Router
+from .types import RouteResult
 
 __all__ = [
     "__version__",
@@ -29,4 +30,5 @@ __all__ = [
     # Low-level / advanced API
     "Router",
     "DeploymentMode",
+    "RouteResult",
 ]
