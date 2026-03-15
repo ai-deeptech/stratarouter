@@ -11,7 +11,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 authors = [
-    { name = "StrataRouter Contributors", email = "hello@stratarouter.dev" }
+    { name = "StrataRouter Contributors", email = "support@stratarouter.com" }
 ]
 keywords = ["routing", "semantic", "embeddings", "llm", "ai", "nlp", "rust"]
 classifiers = [
